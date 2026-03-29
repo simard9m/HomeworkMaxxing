@@ -18,8 +18,7 @@ enum class CategorieRoutine {
 
 @Entity(tableName = "routines")
 data class Routine(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey(autoGenerate = true) val id : Int? = null,
     val nom: String,
     val description: String,
     val date: LocalDateTime,
