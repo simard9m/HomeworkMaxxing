@@ -9,7 +9,6 @@ import com.example.homeworkmaxxing.data.model.RoutineDao
 abstract class RoutinesDatabase : RoomDatabase() {
 
     abstract val dao: RoutineDao
-
     companion object {
         const val DATABASE_NAME = "routines_db"
     }
