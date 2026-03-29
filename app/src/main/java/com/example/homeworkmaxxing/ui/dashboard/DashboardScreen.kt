@@ -1,3 +1,5 @@
+package com.example.homeworkmaxxing.ui.dashboard
+
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -19,8 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Routine
-import com.example.homeworkmaxxing.ui.dashboard.DashboardUiState
-import com.example.homeworkmaxxing.ui.dashboard.DashboardViewModel
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -129,7 +129,10 @@ private fun DashboardContent(
                 EmptyRoutinesCard()
             }
         } else {
-            items(uiState.routines.sortedBy { it.date }, key = { it.id }) { routine ->
+            items(
+                uiState.routines.sortedBy { it.date },
+                key = { routine -> routine.id ?: "${routine.nom}-${routine.date}" }
+            ) { routine ->
                 RoutineRow(
                     routine = routine,
                     cours = routine.coursId?.let { coursById[it] },
