@@ -10,7 +10,9 @@ import androidx.annotation.RequiresApi
 import com.example.homeworkmaxxing.ui.dashboard.DashboardScreen
 import com.example.homeworkmaxxing.ui.dashboard.DashboardViewModel
 import com.example.homeworkmaxxing.ui.theme.HomeworkMaxxingTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val dashboardViewModel: DashboardViewModel by viewModels()
