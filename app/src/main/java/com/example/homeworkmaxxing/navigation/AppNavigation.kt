@@ -20,10 +20,10 @@ import com.example.homeworkmaxxing.ui.routine.RoutineFormViewModel
 // Routes
 // ─────────────────────────────────────────────
 
-sealed class Screen(val route: String) {
-    object Dashboard : Screen("dashboard")
-    object AddRoutine : Screen("routine/add")
-    object EditRoutine : Screen("routine/edit/{routineId}") {
+sealed class AppScreen(val route: String) {
+    data object Dashboard : AppScreen("dashboard")
+    data object AddRoutine : AppScreen("routine/add")
+    data object EditRoutine : AppScreen("routine/edit/{routineId}") {
         fun createRoute(routineId: Int) = "routine/edit/$routineId"
     }
 }
@@ -42,26 +42,26 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Dashboard.route
+        startDestination = AppScreen.Dashboard.route
     ) {
 
         // ── Dashboard ──────────────────────────────
-        composable(Screen.Dashboard.route) {
+        composable(AppScreen.Dashboard.route) {
             DashboardScreen(
                 viewModel = dashboardViewModel,
                 onAddRoutineClick = {
-                    navController.navigate(Screen.AddRoutine.route)
+                    navController.navigate(AppScreen.AddRoutine.route)
                 },
                 onRoutineClick = { routine ->
                     routine.id?.let { id ->
-                        navController.navigate(Screen.EditRoutine.createRoute(id))
+                        navController.navigate(AppScreen.EditRoutine.createRoute(id))
                     }
                 }
             )
         }
 
         // ── Ajout routine ────────────────────────────
-        composable(Screen.AddRoutine.route) {
+        composable(AppScreen.AddRoutine.route) {
             val formViewModel: RoutineFormViewModel = viewModel()
             RoutineFormScreen(
                 viewModel = formViewModel,
@@ -73,7 +73,7 @@ fun AppNavigation() {
 
         // ── Modif routine ───────────────────────────
         composable(
-            route = Screen.EditRoutine.route,
+            route = AppScreen.EditRoutine.route,
             arguments = listOf(navArgument("routineId") { type = NavType.IntType })
         ) { backStackEntry ->
             val routineId = backStackEntry.arguments?.getInt("routineId")
