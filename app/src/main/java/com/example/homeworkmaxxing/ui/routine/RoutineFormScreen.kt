@@ -11,7 +11,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,9 +26,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
@@ -51,7 +49,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,6 +69,10 @@ import com.example.homeworkmaxxing.data.model.Repetabilite
 import com.example.homeworkmaxxing.data.model.Routine
 import java.util.Calendar
 
+// ─────────────────────────────────────────────
+// Entry point
+// ─────────────────────────────────────────────
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RoutineFormScreen(
@@ -79,20 +80,27 @@ fun RoutineFormScreen(
     existingRoutine: Routine? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
+    // Callbacks vers DashboardViewModel
+    onAddRoutine: (Routine) -> Unit = {},
+    onUpdateRoutine: (Routine) -> Unit = {},
+    onDeleteRoutine: (Int) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val isEditing = existingRoutine != null
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
+    //Charger la routine existante une seule fois
     LaunchedEffect(existingRoutine) {
         existingRoutine?.let { viewModel.loadRoutine(it) }
     }
 
+    //Naviguer après sauvegarde / suppression
     LaunchedEffect(uiState.isSaved) { if (uiState.isSaved) onSaved() }
     LaunchedEffect(uiState.isDeleted) { if (uiState.isDeleted) onDelete?.invoke() }
 
+    //Date picker natif
     if (uiState.showDatePicker) {
         val cal = Calendar.getInstance()
         DatePickerDialog(
@@ -106,6 +114,7 @@ fun RoutineFormScreen(
         }.show()
     }
 
+    //Time picker natif
     if (uiState.showTimePicker) {
         val cal = Calendar.getInstance()
         TimePickerDialog(
@@ -119,18 +128,17 @@ fun RoutineFormScreen(
         }.show()
     }
 
+    //Dialog de confirmation de suppression
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Supprimer la routine") },
             text = { Text("Cette action est irréversible. Voulez-vous vraiment supprimer cette routine ?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteConfirm = false
-                        viewModel.onDelete()
-                    }
-                ) {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    viewModel.onDelete(onDeleteRoutine)
+                }) {
                     Text("Supprimer", color = MaterialTheme.colorScheme.error)
                 }
             },
@@ -161,7 +169,7 @@ fun RoutineFormScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // ── Nom ──────────────────────────────────────
+            //Nom
             OutlinedTextField(
                 value = uiState.nom,
                 onValueChange = viewModel::onNomChange,
@@ -179,7 +187,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Description ──────────────────────────────
+            //Description
             OutlinedTextField(
                 value = uiState.description,
                 onValueChange = viewModel::onDescriptionChange,
@@ -198,7 +206,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Date & Heure ─────────────────────────────
+            //Date
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -233,7 +241,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(4.dp))
 
-            // ── Répétition ───────────────────────────────
+            //Répétition
             FormDropdownRow(
                 label = "Répétition",
                 value = uiState.repetabilite.toLabel(),
@@ -246,7 +254,14 @@ fun RoutineFormScreen(
                         text = { Text(rep.toLabel()) },
                         onClick = { viewModel.onRepetabiliteSelected(rep) },
                         trailingIcon = if (uiState.repetabilite == rep) {
-                            { Icon(Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                            {
+                                Icon(
+                                    Icons.Default.Circle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                            }
                         } else null
                     )
                 }
@@ -254,7 +269,7 @@ fun RoutineFormScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            // ── Catégorie ────────────────────────────────
+            //Catégorie
             FormDropdownRow(
                 label = "Catégorie",
                 value = uiState.categorie?.toLabel() ?: "",
@@ -267,7 +282,14 @@ fun RoutineFormScreen(
                         text = { Text(cat.toLabel()) },
                         onClick = { viewModel.onCategorieSelected(cat) },
                         trailingIcon = if (uiState.categorie == cat) {
-                            { Icon(Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                            {
+                                Icon(
+                                    Icons.Default.Circle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                            }
                         } else null
                     )
                 }
@@ -275,7 +297,7 @@ fun RoutineFormScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            // ── Cours ────────────────────────────────────
+            //Cours
             FormDropdownRow(
                 label = "Cours",
                 value = viewModel.coursList.find { it.id == uiState.coursId }?.nom ?: "",
@@ -285,14 +307,31 @@ fun RoutineFormScreen(
             ) {
                 DropdownMenuItem(
                     text = { Text("Aucun cours") },
-                    onClick = { viewModel.onCoursSelected(null) }
+                    onClick = { viewModel.onCoursSelected(null) },
+                    trailingIcon = if (uiState.coursId == null) {
+                        {
+                            Icon(
+                                Icons.Default.Circle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(10.dp)
+                            )
+                        }
+                    } else null
                 )
                 viewModel.coursList.forEach { cours ->
                     DropdownMenuItem(
                         text = { Text(cours.nom) },
                         onClick = { viewModel.onCoursSelected(cours.id) },
                         trailingIcon = if (uiState.coursId == cours.id) {
-                            { Icon(Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                            {
+                                Icon(
+                                    Icons.Default.Circle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                            }
                         } else null
                     )
                 }
@@ -302,7 +341,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // ── Priorité ───────────────────────────────
+            //Priorité
             PrioriteToggleRow(
                 selected = uiState.priorite,
                 onSelected = viewModel::onPrioriteSelected
@@ -310,7 +349,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // ── Error message ────────────────────────────
+            //Message d'erreur
             uiState.errorMessage?.let { msg ->
                 Text(
                     text = msg,
@@ -320,9 +359,14 @@ fun RoutineFormScreen(
                 )
             }
 
-            // ── Save button ──────────────────────────────
+            //Bouton Sauvegarder
             Button(
-                onClick = viewModel::onSave,
+                onClick = {
+                    viewModel.onSave(
+                        onAdd = onAddRoutine,
+                        onUpdate = onUpdateRoutine
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -370,14 +414,12 @@ private fun RoutineFormTopBar(
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
             }
-
             Text(
                 text = if (isEditing) "Modifier la routine" else "Nouvelle routine",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
-
             if (onDelete != null) {
                 IconButton(onClick = onDelete) {
                     Icon(
@@ -392,7 +434,7 @@ private fun RoutineFormTopBar(
 }
 
 // ─────────────────────────────────────────────
-// Répétition / Catégorie / Cours
+// Dropdown row générique
 // ─────────────────────────────────────────────
 
 @Composable
@@ -464,8 +506,6 @@ private fun PrioriteToggleRow(
     selected: Priorite?,
     onSelected: (Priorite) -> Unit
 ) {
-    // Map: 3 toggle buttons → Basse / Haute / Urgente
-    // (Matches the 3-button pattern from Figma)
     val options = listOf(
         Priorite.BASSE   to "Basse",
         Priorite.HAUTE   to "Haute",
@@ -487,7 +527,6 @@ private fun PrioriteToggleRow(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

@@ -36,8 +36,8 @@ sealed class Screen(val route: String) {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    // Shared ViewModel scoped to the NavGraph so the dashboard
-    // state persists across back-navigation
+    // ViewModel partagé au niveau du graphe — sa liste de routines persiste
+    // entre les navigations avant/arrière
     val dashboardViewModel: DashboardViewModel = viewModel()
 
     NavHost(
@@ -45,7 +45,7 @@ fun AppNavigation() {
         startDestination = Screen.Dashboard.route
     ) {
 
-        // ── Dashboard ──────────────────────────────
+        //Dashboard
         composable(Screen.Dashboard.route) {
             DashboardScreen(
                 viewModel = dashboardViewModel,
@@ -60,18 +60,19 @@ fun AppNavigation() {
             )
         }
 
-        // ── Ajout routine ────────────────────────────
+        //Création d'une routine
         composable(Screen.AddRoutine.route) {
             val formViewModel: RoutineFormViewModel = viewModel()
             RoutineFormScreen(
                 viewModel = formViewModel,
                 existingRoutine = null,
                 onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onSaved = { navController.popBackStack() },
+                onAddRoutine = { routine -> dashboardViewModel.addRoutine(routine) }
             )
         }
 
-        // ── Modif routine ───────────────────────────
+        //Modification d'une routine
         composable(
             route = Screen.EditRoutine.route,
             arguments = listOf(navArgument("routineId") { type = NavType.IntType })
@@ -86,7 +87,9 @@ fun AppNavigation() {
                 existingRoutine = routine,
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
-                onDelete = { navController.popBackStack() }
+                onDelete = { navController.popBackStack() },
+                onUpdateRoutine = { updated -> dashboardViewModel.updateRoutine(updated) },
+                onDeleteRoutine = { id -> dashboardViewModel.deleteRoutine(id) }
             )
         }
     }

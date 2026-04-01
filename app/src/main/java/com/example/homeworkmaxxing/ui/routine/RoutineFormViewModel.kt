@@ -24,11 +24,15 @@ class RoutineFormViewModel : ViewModel() {
 
     val coursList = FakeDataUtil.getCours()
 
+    // L'ID de la routine en cours d'édition (null si création)
+    private var editingRoutineId: Int? = null
+
     private var selectedDateTime: LocalDateTime? = null
     private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy", Locale.FRENCH)
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH)
 
     fun loadRoutine(routine: Routine) {
+        editingRoutineId = routine.id
         selectedDateTime = routine.date
         _uiState.update {
             it.copy(
@@ -44,7 +48,9 @@ class RoutineFormViewModel : ViewModel() {
         }
     }
 
-    fun onNomChange(value: String) = _uiState.update { it.copy(nom = value) }
+    //Champs
+
+    fun onNomChange(value: String) = _uiState.update { it.copy(nom = value, errorMessage = null) }
     fun onDescriptionChange(value: String) = _uiState.update { it.copy(description = value) }
 
     fun onDateSelected(year: Int, month: Int, day: Int) {
@@ -53,7 +59,8 @@ class RoutineFormViewModel : ViewModel() {
         _uiState.update {
             it.copy(
                 dateText = selectedDateTime!!.format(dateFormatter),
-                showDatePicker = false
+                showDatePicker = false,
+                errorMessage = null
             )
         }
     }
@@ -74,7 +81,6 @@ class RoutineFormViewModel : ViewModel() {
     }
 
     fun onPrioriteSelected(priorite: Priorite) = _uiState.update {
-        // Tapping the same priority again deselects it
         val newPriorite = if (it.priorite == priorite) null else priorite
         it.copy(priorite = newPriorite)
     }
@@ -87,15 +93,38 @@ class RoutineFormViewModel : ViewModel() {
         it.copy(coursId = coursId, showCoursDropdown = false)
     }
 
-    fun toggleDatePicker() = _uiState.update { it.copy(showDatePicker = !it.showDatePicker, showTimePicker = false) }
-    fun toggleTimePicker() = _uiState.update { it.copy(showTimePicker = !it.showTimePicker, showDatePicker = false) }
-    fun toggleRepetitionDropdown() = _uiState.update { it.copy(showRepetitionDropdown = !it.showRepetitionDropdown) }
-    fun toggleCategorieDropdown() = _uiState.update { it.copy(showCategorieDropdown = !it.showCategorieDropdown) }
-    fun toggleCoursDropdown() = _uiState.update { it.copy(showCoursDropdown = !it.showCoursDropdown) }
+    //dropdowns
+
+    fun toggleDatePicker() = _uiState.update {
+        it.copy(showDatePicker = !it.showDatePicker, showTimePicker = false)
+    }
+
+    fun toggleTimePicker() = _uiState.update {
+        it.copy(showTimePicker = !it.showTimePicker, showDatePicker = false)
+    }
+
+    fun toggleRepetitionDropdown() = _uiState.update {
+        it.copy(showRepetitionDropdown = !it.showRepetitionDropdown)
+    }
+
+    fun toggleCategorieDropdown() = _uiState.update {
+        it.copy(showCategorieDropdown = !it.showCategorieDropdown)
+    }
+
+    fun toggleCoursDropdown() = _uiState.update {
+        it.copy(showCoursDropdown = !it.showCoursDropdown)
+    }
+
     fun clearError() = _uiState.update { it.copy(errorMessage = null) }
 
-    fun onSave() {
+    //Sauvegarde
+
+    fun onSave(
+        onAdd: (Routine) -> Unit,
+        onUpdate: (Routine) -> Unit
+    ) {
         val state = _uiState.value
+
         if (state.nom.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Le nom est requis.") }
             return
@@ -104,12 +133,32 @@ class RoutineFormViewModel : ViewModel() {
             _uiState.update { it.copy(errorMessage = "La date et l'heure sont requises.") }
             return
         }
-        // TODO
+
+        val routine = Routine(
+            id = editingRoutineId,
+            nom = state.nom.trim(),
+            description = state.description.trim(),
+            date = selectedDateTime!!,
+            repetabilite = state.repetabilite,
+            categorie = state.categorie ?: CategorieRoutine.AUTRE,
+            priorite = state.priorite ?: Priorite.BASSE,
+            coursId = state.coursId
+        )
+
+        if (editingRoutineId == null) {
+            onAdd(routine)
+        } else {
+            onUpdate(routine)
+        }
+
         _uiState.update { it.copy(isSaved = true, errorMessage = null) }
     }
 
-    fun onDelete() {
-        // TODO
-        _uiState.update { it.copy(isDeleted = true) }
+    //Suppression
+    fun onDelete(onDelete: (Int) -> Unit) {
+        editingRoutineId?.let { id ->
+            onDelete(id)
+            _uiState.update { it.copy(isDeleted = true) }
+        }
     }
 }
