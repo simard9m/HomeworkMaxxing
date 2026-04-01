@@ -35,7 +35,12 @@ class CoursFormViewModel @Inject constructor(
 
     fun loadCoursForEdit(coursId: Long) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    saveSuccess = false
+                )
+            }
 
             val cours = coursDao.getCoursById(coursId)
 
@@ -51,7 +56,7 @@ class CoursFormViewModel @Inject constructor(
                     )
                 }
             } else {
-                _uiState.update { it.copy(isLoading = false) }
+                resetForCreate()
             }
         }
     }
