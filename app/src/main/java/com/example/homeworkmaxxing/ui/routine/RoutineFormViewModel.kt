@@ -37,6 +37,9 @@ class RoutineFormViewModel @Inject constructor(
     private val _coursList = MutableStateFlow<List<Cours>>(emptyList())
     val coursList: StateFlow<List<Cours>> = _coursList.asStateFlow()
 
+    // L'ID de la routine
+    private var editingRoutineId: Int? = null
+
     private var currentRoutineId: Int? = null
     private var selectedDateTime: LocalDateTime? = null
     private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy", Locale.FRENCH)
@@ -55,6 +58,7 @@ class RoutineFormViewModel @Inject constructor(
     }
 
     fun loadRoutine(routine: Routine) {
+        editingRoutineId = routine.id
         currentRoutineId = routine.id
         selectedDateTime = routine.date
         _uiState.update {
@@ -71,6 +75,10 @@ class RoutineFormViewModel @Inject constructor(
         }
     }
 
+    //Champs
+
+    fun onNomChange(value: String) = _uiState.update { it.copy(nom = value, errorMessage = null) }
+    fun onDescriptionChange(value: String) = _uiState.update { it.copy(description = value) }
     fun onNomChange(value: String) = _uiState.update {
         it.copy(nom = value.take(ValidationRules.MAX_ROUTINE_NOM_LENGTH))
     }
@@ -84,7 +92,8 @@ class RoutineFormViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 dateText = selectedDateTime!!.format(dateFormatter),
-                showDatePicker = false
+                showDatePicker = false,
+                errorMessage = null
             )
         }
     }
@@ -105,7 +114,6 @@ class RoutineFormViewModel @Inject constructor(
     }
 
     fun onPrioriteSelected(priorite: Priorite) = _uiState.update {
-        // Tapping the same priority again deselects it
         val newPriorite = if (it.priorite == priorite) null else priorite
         it.copy(priorite = newPriorite)
     }
@@ -118,6 +126,28 @@ class RoutineFormViewModel @Inject constructor(
         it.copy(coursId = coursId, showCoursDropdown = false)
     }
 
+    //dropdowns
+
+    fun toggleDatePicker() = _uiState.update {
+        it.copy(showDatePicker = !it.showDatePicker, showTimePicker = false)
+    }
+
+    fun toggleTimePicker() = _uiState.update {
+        it.copy(showTimePicker = !it.showTimePicker, showDatePicker = false)
+    }
+
+    fun toggleRepetitionDropdown() = _uiState.update {
+        it.copy(showRepetitionDropdown = !it.showRepetitionDropdown)
+    }
+
+    fun toggleCategorieDropdown() = _uiState.update {
+        it.copy(showCategorieDropdown = !it.showCategorieDropdown)
+    }
+
+    fun toggleCoursDropdown() = _uiState.update {
+        it.copy(showCoursDropdown = !it.showCoursDropdown)
+    }
+
     fun toggleDatePicker() = _uiState.update { it.copy(showDatePicker = !it.showDatePicker, showTimePicker = false) }
     fun toggleTimePicker() = _uiState.update { it.copy(showTimePicker = !it.showTimePicker, showDatePicker = false) }
     fun dismissDatePicker() = _uiState.update { it.copy(showDatePicker = false) }
@@ -127,8 +157,14 @@ class RoutineFormViewModel @Inject constructor(
     fun toggleCoursDropdown() = _uiState.update { it.copy(showCoursDropdown = !it.showCoursDropdown) }
     fun clearError() = _uiState.update { it.copy(errorMessage = null) }
 
-    fun onSave() {
+    //Sauvegarde
+
+    fun onSave(
+        onAdd: (Routine) -> Unit,
+        onUpdate: (Routine) -> Unit
+    ) {
         val state = _uiState.value
+
         if (state.nom.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Le nom est requis.") }
             return
@@ -145,6 +181,9 @@ class RoutineFormViewModel @Inject constructor(
             _uiState.update { it.copy(errorMessage = "La date et l'heure sont requises.") }
             return
         }
+
+        val routine = Routine(
+            id = editingRoutineId,
         val categorie = state.categorie
         if (categorie == null) {
             _uiState.update { it.copy(errorMessage = "La categorie est requise.") }
@@ -162,6 +201,25 @@ class RoutineFormViewModel @Inject constructor(
             description = state.description.trim(),
             date = selectedDateTime!!,
             repetabilite = state.repetabilite,
+            categorie = state.categorie ?: CategorieRoutine.AUTRE,
+            priorite = state.priorite ?: Priorite.BASSE,
+            coursId = state.coursId
+        )
+
+        if (editingRoutineId == null) {
+            onAdd(routine)
+        } else {
+            onUpdate(routine)
+        }
+
+        _uiState.update { it.copy(isSaved = true, errorMessage = null) }
+    }
+
+    //Suppression
+    fun onDelete(onDelete: (Int) -> Unit) {
+        editingRoutineId?.let { id ->
+            onDelete(id)
+            _uiState.update { it.copy(isDeleted = true) }
             categorie = categorie,
             priorite = priorite,
             coursId = state.coursId
