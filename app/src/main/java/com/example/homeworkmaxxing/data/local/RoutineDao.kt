@@ -27,6 +27,9 @@ interface RoutineDao {
     @Delete
     suspend fun deleteRoutine(routine: Routine)
 
+    @Query("DELETE FROM routines")
+    suspend fun deleteAllRoutines()
+
     @Query("SELECT COUNT(*) FROM routines")
     suspend fun countRoutines(): Int
 

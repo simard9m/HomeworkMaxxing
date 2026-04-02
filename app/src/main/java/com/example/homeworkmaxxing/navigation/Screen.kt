@@ -12,7 +12,14 @@ sealed class Screen(val route: String) {
         fun createRoute(routineId: Int): String = "routine_form/$routineId"
     }
 
-    data object MesCours : Screen("cours")
+    data object MesCours : Screen("cours?showSetupDialog={showSetupDialog}") {
+        const val baseRoute = "cours"
+        const val showSetupDialogArg = "showSetupDialog"
+
+        fun createRoute(showSetupDialog: Boolean = false): String {
+            return "$baseRoute?$showSetupDialogArg=$showSetupDialog"
+        }
+    }
 
     data object CoursForm : Screen("cours_form?coursId={coursId}") {
         const val baseRoute = "cours_form"

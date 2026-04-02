@@ -1,27 +1,36 @@
-package com.example.homeworkmaxxing.ui.dashboard
+﻿package com.example.homeworkmaxxing.ui.dashboard
 
+import android.app.DatePickerDialog
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Routine
+import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -29,11 +38,64 @@ import java.util.Locale
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     onMesCoursClick: () -> Unit = {},
+    onSessionDateChosen: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onAddRoutineClick: () -> Unit = {},
     onRoutineClick: (Routine) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var showCreateSessionDatePicker by remember { mutableStateOf(false) }
+    var showPostponeSessionDatePicker by remember { mutableStateOf(false) }
+
+    if (showCreateSessionDatePicker) {
+        val calendar = Calendar.getInstance()
+        val tomorrowStartMillis = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        DatePickerDialog(
+            context,
+            { _, year, month, day ->
+                showCreateSessionDatePicker = false
+                viewModel.createSessionDate(year, month + 1, day)
+                onSessionDateChosen()
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).apply {
+            datePicker.minDate = tomorrowStartMillis
+            setOnDismissListener { showCreateSessionDatePicker = false }
+        }.show()
+    }
+
+    if (showPostponeSessionDatePicker) {
+        val calendar = Calendar.getInstance()
+        val tomorrowStartMillis = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        DatePickerDialog(
+            context,
+            { _, year, month, day ->
+                showPostponeSessionDatePicker = false
+                viewModel.postponeSessionDate(year, month + 1, day)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).apply {
+            datePicker.minDate = tomorrowStartMillis
+            setOnDismissListener { showPostponeSessionDatePicker = false }
+        }.show()
+    }
 
     Scaffold(
         topBar = {
@@ -51,14 +113,66 @@ fun DashboardScreen(
             }
         }
     ) { paddingValues ->
-        DashboardContent(
-            uiState = uiState,
-            onRoutineClick = onRoutineClick,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            DashboardContent(
+                uiState = uiState,
+                onRoutineClick = onRoutineClick,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+    }
+
+    if (!uiState.isLoading) {
+        when (uiState.sessionState) {
+            SessionState.NO_SESSION -> {
+                AlertDialog(
+                    onDismissRequest = {},
+                    title = { Text("Fin de session") },
+                    text = {
+                        Text("Veuillez sélectionner le dernier jour de votre session scolaire")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showCreateSessionDatePicker = true }) {
+                            Text("Choisir une date")
+                        }
+                    }
+                )
+            }
+
+            SessionState.SESSION_EXPIRED -> {
+                AlertDialog(
+                    onDismissRequest = {},
+                    title = { Text("Bravo ! Ta session est terminée") },
+                    text = {
+                        Text("Votre session scolaire semble terminée, veuillez choisir une action. \nTerminer la session supprimera vos cours/routines afin de recommencer la prochaine session à neuf !")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.terminateSession() }) {
+                            Text("Terminer la session")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showPostponeSessionDatePicker = true }) {
+                            Text("Reporter la date")
+                        }
+                    }
+                )
+            }
+
+            SessionState.SESSION_ACTIVE -> Unit
+        }
     }
 }
 
@@ -74,6 +188,7 @@ private fun DashboardTopBar(
         shape = RoundedCornerShape(8.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFB388FF)),
         modifier = Modifier
+            .statusBarsPadding()
             .fillMaxWidth()
             .padding(16.dp)
     ) {
@@ -131,6 +246,18 @@ private fun DashboardContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(bottom = 88.dp)
     ) {
+        uiState.sessionDateFin?.let { sessionDateFin ->
+            item {
+                Text(
+                    text = "Date de fin de session : ${formatSessionEndDate(sessionDateFin)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+
         item {
             Text(
                 text = "Dashboard",
@@ -180,7 +307,7 @@ private fun RoutineRow(
     cours: Cours?,
     onClick: () -> Unit
 ) {
-    val formatter = remember { DateTimeFormatter.ofPattern("EEE d MMM • HH:mm", Locale.FRENCH) }
+    val formatter = remember { DateTimeFormatter.ofPattern("EEE d MMM - HH:mm", Locale.FRENCH) }
 
     ElevatedCard(
         onClick = onClick,
@@ -195,9 +322,20 @@ private fun RoutineRow(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "⊕", // replace with real icon later
-                modifier = Modifier.padding(end = 10.dp)
+            val coursColor = cours?.couleurHex?.toCoursColor() ?: Color(0xFF9E9E9E)
+            Box(
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .size(14.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color(0xFF5F5F5F),
+                        shape = CircleShape
+                    )
+                    .background(
+                        color = coursColor,
+                        shape = CircleShape
+                    )
             )
 
             Column(modifier = Modifier.weight(1f)) {
@@ -209,17 +347,17 @@ private fun RoutineRow(
                 Text(
                     text = buildString {
                         append(routine.date.format(formatter))
-                        cours?.let { append("  •  ${it.nom}") }
+                        cours?.let { append(" - ${it.nom}") }
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Text(
-                text = "›",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -237,6 +375,11 @@ private fun CoursesCard(cours: List<Cours>) {
                 Text(
                     text = "Aucun cours pour cette session",
                     style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "Accède a l'onglet \"Cours\" dans le menu pour gérer tes cours",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
@@ -249,10 +392,15 @@ private fun CoursesCard(cours: List<Cours>) {
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(10.dp)
+                                .size(14.dp)
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFF5F5F5F),
+                                    shape = CircleShape
+                                )
                                 .background(
-                                    color = Color(c.couleurHex),
-                                    shape = RoundedCornerShape(50)
+                                    color = c.couleurHex.toCoursColor(),
+                                    shape = CircleShape
                                 )
                         )
                         Spacer(modifier = Modifier.width(10.dp))
@@ -285,4 +433,22 @@ private fun EmptyRoutinesCard() {
             )
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun formatSessionEndDate(sessionDateFin: Long): String {
+    val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.FRENCH)
+    return Instant.ofEpochMilli(sessionDateFin)
+        .atZone(ZoneId.of("America/Toronto"))
+        .toLocalDate()
+        .format(formatter)
+}
+
+private fun Long.toCoursColor(): Color {
+    val argb = if (this <= 0xFFFFFF) {
+        0xFF000000L or this
+    } else {
+        this
+    }
+    return Color(argb)
 }

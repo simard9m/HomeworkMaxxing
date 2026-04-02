@@ -7,6 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.homeworkmaxxing.data.local.AppDatabase
 import com.example.homeworkmaxxing.data.local.CoursDao
 import com.example.homeworkmaxxing.data.local.RoutineDao
+import com.example.homeworkmaxxing.data.local.SessionDao
 import com.example.homeworkmaxxing.util.ValidationRules
 import dagger.Module
 import dagger.Provides
@@ -128,4 +129,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideCoursDao(database: AppDatabase): CoursDao = database.coursDao()
+
+    @Provides
+    @Singleton
+    fun provideSessionDao(database: AppDatabase): SessionDao = database.sessionDao()
 }

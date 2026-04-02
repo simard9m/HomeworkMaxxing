@@ -21,19 +21,37 @@ class RoutineReminderScheduler @Inject constructor(
 
     fun syncReminders(routines: List<Routine>) {
         val currentIds = routines.mapNotNull { it.id }.toSet()
+        val currentSignatures = routines.mapNotNull { routine ->
+            val routineId = routine.id ?: return@mapNotNull null
+            reminderSignature(routineId, toRoutineStartMillis(routine))
+        }.toSet()
         val previousIds = prefs
             .getStringSet(KEY_SCHEDULED_IDS, emptySet())
             .orEmpty()
             .mapNotNull { it.toIntOrNull() }
             .toSet()
+        val notifiedSignatures = prefs
+            .getStringSet(KEY_NOTIFIED_SIGNATURES, emptySet())
+            .orEmpty()
+            .toMutableSet()
+
+        notifiedSignatures.retainAll(currentSignatures)
 
         val removedIds = previousIds - currentIds
-        removedIds.forEach(::cancelReminder)
+        removedIds.forEach { routineId ->
+            cancelReminder(routineId)
+            notifiedSignatures.removeAll { signature ->
+                signature.startsWith("$routineId:")
+            }
+        }
 
-        routines.forEach(::scheduleReminder)
+        routines.forEach { routine ->
+            scheduleReminder(routine, notifiedSignatures)
+        }
 
         prefs.edit()
             .putStringSet(KEY_SCHEDULED_IDS, currentIds.map { it.toString() }.toSet())
+            .putStringSet(KEY_NOTIFIED_SIGNATURES, notifiedSignatures)
             .apply()
     }
 
@@ -48,20 +66,26 @@ class RoutineReminderScheduler @Inject constructor(
         alarmManager.cancel(pendingIntent)
     }
 
-    private fun scheduleReminder(routine: Routine) {
+    private fun scheduleReminder(routine: Routine, notifiedSignatures: MutableSet<String>) {
         val routineId = routine.id ?: return
-        val triggerAtMillis = routine.date
-            .atZone(appZoneId)
-            .toInstant()
-            .toEpochMilli()
+        val routineStartMillis = toRoutineStartMillis(routine)
+        val triggerAtMillis = routineStartMillis - REMINDER_LEAD_TIME_MS
+        val signature = reminderSignature(routineId, routineStartMillis)
         val now = System.currentTimeMillis()
-        val reminderIntent = buildReminderIntent(routine, routineId, triggerAtMillis)
+        val reminderIntent = buildReminderIntent(routine, routineId, routineStartMillis)
 
         if (triggerAtMillis <= now) {
             val delay = now - triggerAtMillis
-            if (delay <= PAST_TRIGGER_GRACE_MS) {
-                // If we're only a few seconds/minutes late, fire immediately instead of dropping it.
-                context.sendBroadcast(reminderIntent)
+            if (routineStartMillis > now || delay <= PAST_TRIGGER_GRACE_MS) {
+                // If we're inside the 30-minute window, notify only once.
+                if (notifiedSignatures.add(signature)) {
+                    context.sendBroadcast(reminderIntent)
+                } else {
+                    Log.d(
+                        "RoutineReminderScheduler",
+                        "Skip duplicate reminder for routineId=$routineId signature=$signature"
+                    )
+                }
             } else {
                 cancelReminder(routineId)
             }
@@ -100,26 +124,42 @@ class RoutineReminderScheduler @Inject constructor(
             }
         }
 
-        Log.d("RoutineReminderScheduler", "Reminder scheduled for routineId=$routineId at=$triggerAtMillis")
+        Log.d(
+            "RoutineReminderScheduler",
+            "Reminder scheduled routineId=$routineId reminderAt=$triggerAtMillis routineStart=$routineStartMillis"
+        )
+    }
+
+    private fun toRoutineStartMillis(routine: Routine): Long {
+        return routine.date
+            .atZone(appZoneId)
+            .toInstant()
+            .toEpochMilli()
+    }
+
+    private fun reminderSignature(routineId: Int, routineStartMillis: Long): String {
+        return "$routineId:$routineStartMillis"
     }
 
     private fun buildReminderIntent(
         routine: Routine,
         routineId: Int,
-        triggerAtMillis: Long
+        routineStartMillis: Long
     ): Intent {
         return Intent(context, RoutineReminderReceiver::class.java).apply {
             putExtra(RoutineReminderReceiver.EXTRA_ROUTINE_ID, routineId)
             putExtra(RoutineReminderReceiver.EXTRA_ROUTINE_NOM, routine.nom)
             putExtra(RoutineReminderReceiver.EXTRA_ROUTINE_DESCRIPTION, routine.description)
-            putExtra(RoutineReminderReceiver.EXTRA_ROUTINE_DATE_MILLIS, triggerAtMillis)
+            putExtra(RoutineReminderReceiver.EXTRA_ROUTINE_DATE_MILLIS, routineStartMillis)
         }
     }
 
     companion object {
-        private const val PREFS_NAME = "routine_reminder_prefs"
+        const val PREFS_NAME = "routine_reminder_prefs"
         private const val KEY_SCHEDULED_IDS = "scheduled_routine_ids"
+        const val KEY_NOTIFIED_SIGNATURES = "notified_routine_signatures"
         private const val APP_TIME_ZONE = "America/Toronto"
         private const val PAST_TRIGGER_GRACE_MS = 60_000L
+        private const val REMINDER_LEAD_TIME_MS = 30 * 60 * 1000L + 50 * 1000L
     }
 }

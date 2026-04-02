@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.homeworkmaxxing.navigation.AppNavigation
 import com.example.homeworkmaxxing.ui.theme.HomeworkMaxxingTheme
@@ -31,6 +32,15 @@ class MainActivity : ComponentActivity() {
             }
         }
         requestNotificationPermissionIfNeeded()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        clearPostedNotifications()
+    }
+
+    private fun clearPostedNotifications() {
+        NotificationManagerCompat.from(this).cancelAll()
     }
 
     private fun requestNotificationPermissionIfNeeded() {

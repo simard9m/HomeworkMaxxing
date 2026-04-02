@@ -31,7 +31,10 @@ fun AppNavigation() {
             val dashboardViewModel: DashboardViewModel = hiltViewModel()
             DashboardScreen(
                 viewModel = dashboardViewModel,
-                onMesCoursClick = { navController.navigate(Screen.MesCours.route) },
+                onMesCoursClick = { navController.navigate(Screen.MesCours.createRoute()) },
+                onSessionDateChosen = {
+                    navController.navigate(Screen.MesCours.createRoute(showSetupDialog = true))
+                },
                 onAddRoutineClick = { navController.navigate(Screen.RoutineForm.route) },
                 onRoutineClick = { routine ->
                     routine.id?.let { routineId ->
@@ -75,10 +78,22 @@ fun AppNavigation() {
             )
         }
 
-        composable(Screen.MesCours.route) {
+        composable(
+            route = Screen.MesCours.route,
+            arguments = listOf(
+                navArgument(Screen.MesCours.showSetupDialogArg) {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) { backStackEntry ->
+            val showSetupDialog = backStackEntry.arguments
+                ?.getBoolean(Screen.MesCours.showSetupDialogArg)
+                ?: false
             MesCoursPage(
                 viewModel = hiltViewModel(),
                 onBackClick = { navController.popBackStack() },
+                showSetupDialog = showSetupDialog,
                 onAddCoursClick = {
                     navController.navigate(Screen.CoursForm.createRoute())
                 },
