@@ -1,6 +1,7 @@
 package com.example.homeworkmaxxing.navigation
 
 sealed class Screen(val route: String) {
+    data object Dashboard : Screen("dashboard")
     data object CoursList : Screen("cours")
 
     data object CoursForm : Screen("cours_form?coursId={coursId}") {
