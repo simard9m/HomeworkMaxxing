@@ -15,6 +15,9 @@ interface CoursDao {
     @Query("SELECT * FROM cours ORDER BY nom ASC")
     fun getAllCours(): Flow<List<Cours>>
 
+    @Query("SELECT * FROM cours ORDER BY nom ASC")
+    suspend fun getAllCoursList(): List<Cours>
+
     @Query("SELECT * FROM cours WHERE id = :id LIMIT 1")
     suspend fun getCoursById(id: Long): Cours?
 

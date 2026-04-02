@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -46,6 +47,7 @@ import com.example.homeworkmaxxing.data.model.Cours
 @Composable
 fun MesCoursPage(
     viewModel: MesCoursViewModel,
+    onBackClick: (() -> Unit)? = null,
     onOpenDrawer: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onAddCoursClick: () -> Unit = {},
@@ -55,6 +57,7 @@ fun MesCoursPage(
 
     MesCoursScreen(
         uiState = uiState,
+        onBackClick = onBackClick,
         onOpenDrawer = onOpenDrawer,
         onSettingsClick = onSettingsClick,
         onAddCoursClick = onAddCoursClick,
@@ -68,6 +71,7 @@ fun MesCoursPage(
 @Composable
 fun MesCoursScreen(
     uiState: MesCoursUiState,
+    onBackClick: (() -> Unit)?,
     onOpenDrawer: () -> Unit,
     onSettingsClick: () -> Unit,
     onAddCoursClick: () -> Unit,
@@ -101,11 +105,20 @@ fun MesCoursScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onOpenDrawer) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Ouvrir le menu"
-                    )
+                if (onBackClick != null) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Retour"
+                        )
+                    }
+                } else {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Ouvrir le menu"
+                        )
+                    }
                 }
 
                 Text(

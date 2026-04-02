@@ -108,8 +108,11 @@ class DashboardViewModel @Inject constructor(
                 )
             }
             if (routineDao.countRoutines() == 0) {
+                val coursIdsByName = coursDao
+                    .getAllCoursList()
+                    .associate { cours -> cours.nom to cours.id }
                 routineDao.insertRoutines(
-                    FakeDataUtil.getRoutines()
+                    FakeDataUtil.getRoutines(coursIdsByName)
                 )
             }
         }

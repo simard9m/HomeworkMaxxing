@@ -24,6 +24,8 @@ import com.example.homeworkmaxxing.navigation.Screen
 import com.example.homeworkmaxxing.ui.cours.AjoutModificationCoursPage
 import com.example.homeworkmaxxing.ui.cours.MesCoursPage
 import com.example.homeworkmaxxing.ui.dashboard.DashboardScreen
+import androidx.annotation.RequiresApi
+import com.example.homeworkmaxxing.navigation.AppNavigation
 import com.example.homeworkmaxxing.ui.theme.HomeworkMaxxingTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -44,6 +46,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(android.os.Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestNotificationPermissionIfNeeded()
@@ -51,7 +54,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HomeworkMaxxingTheme {
-                HomeworkMaxxingNavHost()
+                AppNavigation()
             }
         }
     }
