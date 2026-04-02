@@ -10,9 +10,11 @@ import java.time.ZoneId
 
 class RoomConverters {
 
+    private val appZoneId = ZoneId.of(APP_TIME_ZONE)
+
     @TypeConverter
     fun fromLocalDateTime(value: LocalDateTime?): Long? {
-        return value?.atZone(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+        return value?.atZone(appZoneId)?.toInstant()?.toEpochMilli()
     }
 
     @TypeConverter
@@ -20,7 +22,7 @@ class RoomConverters {
         return value?.let {
             LocalDateTime.ofInstant(
                 Instant.ofEpochMilli(it),
-                ZoneId.systemDefault()
+                appZoneId
             )
         }
     }
@@ -47,5 +49,9 @@ class RoomConverters {
     @TypeConverter
     fun toCategorieRoutine(value: String?): CategorieRoutine? {
         return value?.let { CategorieRoutine.valueOf(it) }
+    }
+
+    companion object {
+        private const val APP_TIME_ZONE = "America/Toronto"
     }
 }

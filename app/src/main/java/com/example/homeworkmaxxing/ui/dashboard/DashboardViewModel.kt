@@ -8,6 +8,7 @@ import com.example.homeworkmaxxing.data.local.CoursDao
 import com.example.homeworkmaxxing.data.local.RoutineDao
 import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Routine
+import com.example.homeworkmaxxing.notification.RoutineReminderScheduler
 import com.example.homeworkmaxxing.util.FakeDataUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -20,7 +21,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val routineDao: RoutineDao,
-    private val coursDao: CoursDao
+    private val coursDao: CoursDao,
+    private val routineReminderScheduler: RoutineReminderScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -85,6 +87,7 @@ class DashboardViewModel @Inject constructor(
                 routineDao.getAllRoutines(),
                 coursDao.getAllCours()
             ) { routines, cours ->
+                routineReminderScheduler.syncReminders(routines)
                 DashboardUiState(
                     routines = routines,
                     cours = cours,
@@ -105,8 +108,11 @@ class DashboardViewModel @Inject constructor(
                 )
             }
             if (routineDao.countRoutines() == 0) {
+                val coursIdsByName = coursDao
+                    .getAllCoursList()
+                    .associate { cours -> cours.nom to cours.id }
                 routineDao.insertRoutines(
-                    FakeDataUtil.getRoutines()
+                    FakeDataUtil.getRoutines(coursIdsByName)
                 )
             }
         }

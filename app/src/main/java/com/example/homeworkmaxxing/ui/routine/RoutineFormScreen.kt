@@ -67,6 +67,7 @@ import com.example.homeworkmaxxing.data.model.CategorieRoutine
 import com.example.homeworkmaxxing.data.model.Priorite
 import com.example.homeworkmaxxing.data.model.Repetabilite
 import com.example.homeworkmaxxing.data.model.Routine
+import com.example.homeworkmaxxing.util.ValidationRules
 import java.util.Calendar
 
 // ─────────────────────────────────────────────
@@ -80,12 +81,10 @@ fun RoutineFormScreen(
     existingRoutine: Routine? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    onDelete: (() -> Unit)? = null,
-    onAddRoutine: (Routine) -> Unit = {},
-    onUpdateRoutine: (Routine) -> Unit = {},
-    onDeleteRoutine: (Int) -> Unit = {}
+    onDelete: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val coursList by viewModel.coursList.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val isEditing = existingRoutine != null
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -109,7 +108,7 @@ fun RoutineFormScreen(
             cal.get(Calendar.MONTH),
             cal.get(Calendar.DAY_OF_MONTH)
         ).apply {
-            setOnDismissListener { viewModel.toggleDatePicker() }
+            setOnDismissListener { viewModel.dismissDatePicker() }
         }.show()
     }
 
@@ -123,7 +122,7 @@ fun RoutineFormScreen(
             cal.get(Calendar.MINUTE),
             true
         ).apply {
-            setOnDismissListener { viewModel.toggleTimePicker() }
+            setOnDismissListener { viewModel.dismissTimePicker() }
         }.show()
     }
 
@@ -136,7 +135,7 @@ fun RoutineFormScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
-                    viewModel.onDelete(onDeleteRoutine)
+                    viewModel.onDelete()
                 }) {
                     Text("Supprimer", color = MaterialTheme.colorScheme.error)
                 }
@@ -175,6 +174,9 @@ fun RoutineFormScreen(
                 label = { Text("Nom") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                supportingText = {
+                    Text("${uiState.nom.length}/${ValidationRules.MAX_ROUTINE_NOM_LENGTH}")
+                },
                 trailingIcon = {
                     if (uiState.nom.isNotEmpty()) {
                         IconButton(onClick = { viewModel.onNomChange("") }) {
@@ -194,6 +196,9 @@ fun RoutineFormScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5,
+                supportingText = {
+                    Text("${uiState.description.length}/${ValidationRules.MAX_ROUTINE_DESCRIPTION_LENGTH}")
+                },
                 trailingIcon = {
                     if (uiState.description.isNotEmpty()) {
                         IconButton(onClick = { viewModel.onDescriptionChange("") }) {
@@ -299,7 +304,7 @@ fun RoutineFormScreen(
             //Cours
             FormDropdownRow(
                 label = "Cours",
-                value = viewModel.coursList.find { it.id == uiState.coursId }?.nom ?: "",
+                value = coursList.find { it.id == uiState.coursId }?.nom ?: "",
                 leadingIcon = Icons.Default.School,
                 expanded = uiState.showCoursDropdown,
                 onToggle = viewModel::toggleCoursDropdown
@@ -318,7 +323,7 @@ fun RoutineFormScreen(
                         }
                     } else null
                 )
-                viewModel.coursList.forEach { cours ->
+                coursList.forEach { cours ->
                     DropdownMenuItem(
                         text = { Text(cours.nom) },
                         onClick = { viewModel.onCoursSelected(cours.id) },
@@ -359,12 +364,7 @@ fun RoutineFormScreen(
             }
 
             Button(
-                onClick = {
-                    viewModel.onSave(
-                        onAdd = onAddRoutine,
-                        onUpdate = onUpdateRoutine
-                    )
-                },
+                onClick = viewModel::onSave,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),

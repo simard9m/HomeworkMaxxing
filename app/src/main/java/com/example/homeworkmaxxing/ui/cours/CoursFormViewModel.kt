@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.homeworkmaxxing.data.local.CoursDao
 import com.example.homeworkmaxxing.data.model.Cours
+import com.example.homeworkmaxxing.util.ValidationRules
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,9 +22,10 @@ class CoursFormViewModel @Inject constructor(
     val uiState: StateFlow<CoursFormUiState> = _uiState.asStateFlow()
 
     fun onNomChange(newValue: String) {
+        val limitedValue = newValue.take(ValidationRules.MAX_COURS_NOM_LENGTH)
         _uiState.update {
             it.copy(
-                nom = newValue,
+                nom = limitedValue,
                 nomError = null
             )
         }
@@ -71,33 +73,48 @@ class CoursFormViewModel @Inject constructor(
             }
             return
         }
+        if (trimmedName.length > ValidationRules.MAX_COURS_NOM_LENGTH) {
+            _uiState.update {
+                it.copy(nomError = "Maximum ${ValidationRules.MAX_COURS_NOM_LENGTH} caracteres.")
+            }
+            return
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, nomError = null) }
 
-            if (currentState.isEditMode && currentState.coursId != null) {
-                coursDao.updateCours(
-                    Cours(
-                        id = currentState.coursId,
-                        nom = trimmedName,
-                        couleurHex = currentState.couleurHex
+            runCatching {
+                if (currentState.isEditMode && currentState.coursId != null) {
+                    coursDao.updateCours(
+                        Cours(
+                            id = currentState.coursId,
+                            nom = trimmedName,
+                            couleurHex = currentState.couleurHex
+                        )
                     )
-                )
-            } else {
-                coursDao.insertCours(
-                    Cours(
-                        id = 0,
-                        nom = trimmedName,
-                        couleurHex = currentState.couleurHex
+                } else {
+                    coursDao.insertCours(
+                        Cours(
+                            id = 0,
+                            nom = trimmedName,
+                            couleurHex = currentState.couleurHex
+                        )
                     )
-                )
-            }
-
-            _uiState.update {
-                it.copy(
-                    isSaving = false,
-                    saveSuccess = true
-                )
+                }
+            }.onSuccess {
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        saveSuccess = true
+                    )
+                }
+            }.onFailure {
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        nomError = "Impossible d'enregistrer ce cours."
+                    )
+                }
             }
         }
     }

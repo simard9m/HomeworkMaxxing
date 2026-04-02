@@ -28,7 +28,7 @@ import java.util.Locale
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
-    onMenuClick: () -> Unit = {},
+    onMesCoursClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onAddRoutineClick: () -> Unit = {},
     onRoutineClick: (Routine) -> Unit = {},
@@ -38,7 +38,7 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             DashboardTopBar(
-                onMenuClick = onMenuClick,
+                onMesCoursClick = onMesCoursClick,
                 onSettingsClick = onSettingsClick
             )
         },
@@ -64,9 +64,11 @@ fun DashboardScreen(
 
 @Composable
 private fun DashboardTopBar(
-    onMenuClick: () -> Unit,
+    onMesCoursClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
+    var isMenuExpanded by remember { mutableStateOf(false) }
+
     Surface(
         tonalElevation = 1.dp,
         shape = RoundedCornerShape(8.dp),
@@ -82,8 +84,23 @@ private fun DashboardTopBar(
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onMenuClick) {
-                Icon(Icons.Default.Menu, contentDescription = "Menu")
+            Box {
+                IconButton(onClick = { isMenuExpanded = true }) {
+                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                }
+
+                DropdownMenu(
+                    expanded = isMenuExpanded,
+                    onDismissRequest = { isMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Mes Cours") },
+                        onClick = {
+                            isMenuExpanded = false
+                            onMesCoursClick()
+                        }
+                    )
+                }
             }
 
             Text(

@@ -2,14 +2,27 @@ package com.example.homeworkmaxxing.util
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.CategorieRoutine
+import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Priorite
 import com.example.homeworkmaxxing.data.model.Repetabilite
 import com.example.homeworkmaxxing.data.model.Routine
 import java.time.LocalDateTime
 
 object FakeDataUtil {
+
+    private data class RoutineSeed(
+        val id: Int,
+        val nom: String,
+        val description: String,
+        val daysFromNow: Long,
+        val repetabilite: Repetabilite,
+        val categorie: CategorieRoutine,
+        val coursName: String?,
+        val priorite: Priorite,
+        val hour: Int? = null,
+        val minute: Int? = null
+    )
 
     fun getCours(): List<Cours> {
         return listOf(
@@ -30,7 +43,7 @@ object FakeDataUtil {
             ),
             Cours(
                 id = 4,
-                nom = "Français",
+                nom = "Francais",
                 couleurHex = 0xFFFFE4D6
             ),
             Cours(
@@ -57,68 +70,93 @@ object FakeDataUtil {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getRoutines(): List<Routine> {
-        return listOf(
-            Routine(
+    fun getRoutines(coursIdsByName: Map<String, Long>): List<Routine> {
+        val seeds = listOf(
+            RoutineSeed(
                 id = 1,
                 nom = "Examen Math",
-                description = "Réviser chapitres 1 à 4",
-                date = LocalDateTime.now().plusDays(1),
+                description = "Reviser chapitres 1 a 4",
+                daysFromNow = 1,
                 repetabilite = Repetabilite.AUCUNE,
                 categorie = CategorieRoutine.EXAMEN,
-                coursId = 1,
+                coursName = "Maths",
                 priorite = Priorite.URGENTE
             ),
-            Routine(
+            RoutineSeed(
                 id = 2,
                 nom = "Devoir Anglais",
-                description = "Remettre la rédaction",
-                date = LocalDateTime.now().plusDays(2),
+                description = "Remettre la redaction",
+                daysFromNow = 2,
                 repetabilite = Repetabilite.AUCUNE,
                 categorie = CategorieRoutine.DEVOIR,
-                coursId = 2,
+                coursName = "Algo",
                 priorite = Priorite.HAUTE
             ),
-            Routine(
+            RoutineSeed(
                 id = 3,
-                nom = "Étude Algo",
-                description = "Faire exercices de structures de données",
-                date = LocalDateTime.now().plusDays(3),
+                nom = "Etude Algo",
+                description = "Faire exercices de structures de donnees",
+                daysFromNow = 3,
                 repetabilite = Repetabilite.HEBDOMADAIRE,
                 categorie = CategorieRoutine.ETUDE,
-                coursId = 2,
+                coursName = "Algo",
                 priorite = Priorite.MOYENNE
             ),
-            Routine(
+            RoutineSeed(
                 id = 5,
                 nom = "Travail Histoire",
-                description = "Préparer le résumé sur la Révolution industrielle",
-                date = LocalDateTime.now().plusDays(5),
+                description = "Preparer le resume sur la Revolution industrielle",
+                daysFromNow = 5,
                 repetabilite = Repetabilite.AUCUNE,
                 categorie = CategorieRoutine.PROJET,
-                coursId = 5,
+                coursName = "Histoire",
                 priorite = Priorite.HAUTE
             ),
-            Routine(
+            RoutineSeed(
                 id = 6,
                 nom = "Lab Science",
-                description = "Compléter le rapport de laboratoire",
-                date = LocalDateTime.now().plusDays(6),
+                description = "Completer le rapport de laboratoire",
+                daysFromNow = 6,
                 repetabilite = Repetabilite.AUCUNE,
                 categorie = CategorieRoutine.DEVOIR,
-                coursId = 6,
+                coursName = "Science",
                 priorite = Priorite.HAUTE
             ),
-            Routine(
+            RoutineSeed(
                 id = 7,
                 nom = "Pratique Kotlin",
                 description = "Faire 3 exercices sur les classes et listes",
-                date = LocalDateTime.now().plusDays(1).withHour(19).withMinute(0),
+                daysFromNow = 1,
                 repetabilite = Repetabilite.HEBDOMADAIRE,
                 categorie = CategorieRoutine.ETUDE,
-                coursId = 7,
-                priorite = Priorite.MOYENNE
+                coursName = "Programmation",
+                priorite = Priorite.MOYENNE,
+                hour = 19,
+                minute = 0
             )
         )
+
+        return seeds.map { seed ->
+            val date = LocalDateTime.now()
+                .plusDays(seed.daysFromNow)
+                .let { base ->
+                    if (seed.hour != null && seed.minute != null) {
+                        base.withHour(seed.hour).withMinute(seed.minute)
+                    } else {
+                        base
+                    }
+                }
+
+            Routine(
+                id = seed.id,
+                nom = seed.nom,
+                description = seed.description,
+                date = date,
+                repetabilite = seed.repetabilite,
+                categorie = seed.categorie,
+                priorite = seed.priorite,
+                coursId = seed.coursName?.let(coursIdsByName::get)
+            )
+        }
     }
 }

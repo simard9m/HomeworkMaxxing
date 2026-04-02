@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.homeworkmaxxing.util.ValidationRules
 
 private val courseColors = listOf(
     0xFFF7C8D0,
@@ -167,8 +168,11 @@ fun AjoutModificationCoursScreen(
                             singleLine = true,
                             isError = uiState.nomError != null,
                             supportingText = {
-                                uiState.nomError?.let { error ->
+                                val error = uiState.nomError
+                                if (error != null) {
                                     Text(error)
+                                } else {
+                                    Text("${uiState.nom.length}/${ValidationRules.MAX_COURS_NOM_LENGTH}")
                                 }
                             }
                         )
