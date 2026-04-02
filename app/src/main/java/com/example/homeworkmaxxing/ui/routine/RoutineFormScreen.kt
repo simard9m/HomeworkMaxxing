@@ -81,10 +81,7 @@ fun RoutineFormScreen(
     existingRoutine: Routine? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    onDelete: (() -> Unit)? = null,
-    onAddRoutine: (Routine) -> Unit = {},
-    onUpdateRoutine: (Routine) -> Unit = {},
-    onDeleteRoutine: (Int) -> Unit = {}
+    onDelete: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val coursList by viewModel.coursList.collectAsStateWithLifecycle()
@@ -138,7 +135,7 @@ fun RoutineFormScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
-                    viewModel.onDelete(onDeleteRoutine)
+                    viewModel.onDelete()
                 }) {
                     Text("Supprimer", color = MaterialTheme.colorScheme.error)
                 }
@@ -367,12 +364,7 @@ fun RoutineFormScreen(
             }
 
             Button(
-                onClick = {
-                    viewModel.onSave(
-                        onAdd = onAddRoutine,
-                        onUpdate = onUpdateRoutine
-                    )
-                },
+                onClick = viewModel::onSave,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),

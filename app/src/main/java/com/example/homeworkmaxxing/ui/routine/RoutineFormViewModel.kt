@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.homeworkmaxxing.data.local.CoursDao
 import com.example.homeworkmaxxing.data.local.RoutineDao
-import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.CategorieRoutine
+import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Priorite
 import com.example.homeworkmaxxing.data.model.Repetabilite
 import com.example.homeworkmaxxing.data.model.Routine
@@ -37,9 +37,6 @@ class RoutineFormViewModel @Inject constructor(
     private val _coursList = MutableStateFlow<List<Cours>>(emptyList())
     val coursList: StateFlow<List<Cours>> = _coursList.asStateFlow()
 
-    // L'ID de la routine
-    private var editingRoutineId: Int? = null
-
     private var currentRoutineId: Int? = null
     private var selectedDateTime: LocalDateTime? = null
     private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy", Locale.FRENCH)
@@ -58,7 +55,6 @@ class RoutineFormViewModel @Inject constructor(
     }
 
     fun loadRoutine(routine: Routine) {
-        editingRoutineId = routine.id
         currentRoutineId = routine.id
         selectedDateTime = routine.date
         _uiState.update {
@@ -70,20 +66,24 @@ class RoutineFormViewModel @Inject constructor(
                 categorie = routine.categorie,
                 priorite = routine.priorite,
                 repetabilite = routine.repetabilite,
-                coursId = routine.coursId
+                coursId = routine.coursId,
+                errorMessage = null
             )
         }
     }
 
-    //Champs
-
-    fun onNomChange(value: String) = _uiState.update { it.copy(nom = value, errorMessage = null) }
-    fun onDescriptionChange(value: String) = _uiState.update { it.copy(description = value) }
     fun onNomChange(value: String) = _uiState.update {
-        it.copy(nom = value.take(ValidationRules.MAX_ROUTINE_NOM_LENGTH))
+        it.copy(
+            nom = value.take(ValidationRules.MAX_ROUTINE_NOM_LENGTH),
+            errorMessage = null
+        )
     }
+
     fun onDescriptionChange(value: String) = _uiState.update {
-        it.copy(description = value.take(ValidationRules.MAX_ROUTINE_DESCRIPTION_LENGTH))
+        it.copy(
+            description = value.take(ValidationRules.MAX_ROUTINE_DESCRIPTION_LENGTH),
+            errorMessage = null
+        )
     }
 
     fun onDateSelected(year: Int, month: Int, day: Int) {
@@ -104,29 +104,40 @@ class RoutineFormViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 heureText = selectedDateTime!!.format(timeFormatter),
-                showTimePicker = false
+                showTimePicker = false,
+                errorMessage = null
             )
         }
     }
 
     fun onCategorieSelected(categorie: CategorieRoutine) = _uiState.update {
-        it.copy(categorie = categorie, showCategorieDropdown = false)
+        it.copy(
+            categorie = categorie,
+            showCategorieDropdown = false,
+            errorMessage = null
+        )
     }
 
     fun onPrioriteSelected(priorite: Priorite) = _uiState.update {
         val newPriorite = if (it.priorite == priorite) null else priorite
-        it.copy(priorite = newPriorite)
+        it.copy(priorite = newPriorite, errorMessage = null)
     }
 
     fun onRepetabiliteSelected(rep: Repetabilite) = _uiState.update {
-        it.copy(repetabilite = rep, showRepetitionDropdown = false)
+        it.copy(
+            repetabilite = rep,
+            showRepetitionDropdown = false,
+            errorMessage = null
+        )
     }
 
     fun onCoursSelected(coursId: Long?) = _uiState.update {
-        it.copy(coursId = coursId, showCoursDropdown = false)
+        it.copy(
+            coursId = coursId,
+            showCoursDropdown = false,
+            errorMessage = null
+        )
     }
-
-    //dropdowns
 
     fun toggleDatePicker() = _uiState.update {
         it.copy(showDatePicker = !it.showDatePicker, showTimePicker = false)
@@ -135,6 +146,10 @@ class RoutineFormViewModel @Inject constructor(
     fun toggleTimePicker() = _uiState.update {
         it.copy(showTimePicker = !it.showTimePicker, showDatePicker = false)
     }
+
+    fun dismissDatePicker() = _uiState.update { it.copy(showDatePicker = false) }
+
+    fun dismissTimePicker() = _uiState.update { it.copy(showTimePicker = false) }
 
     fun toggleRepetitionDropdown() = _uiState.update {
         it.copy(showRepetitionDropdown = !it.showRepetitionDropdown)
@@ -148,82 +163,52 @@ class RoutineFormViewModel @Inject constructor(
         it.copy(showCoursDropdown = !it.showCoursDropdown)
     }
 
-    fun toggleDatePicker() = _uiState.update { it.copy(showDatePicker = !it.showDatePicker, showTimePicker = false) }
-    fun toggleTimePicker() = _uiState.update { it.copy(showTimePicker = !it.showTimePicker, showDatePicker = false) }
-    fun dismissDatePicker() = _uiState.update { it.copy(showDatePicker = false) }
-    fun dismissTimePicker() = _uiState.update { it.copy(showTimePicker = false) }
-    fun toggleRepetitionDropdown() = _uiState.update { it.copy(showRepetitionDropdown = !it.showRepetitionDropdown) }
-    fun toggleCategorieDropdown() = _uiState.update { it.copy(showCategorieDropdown = !it.showCategorieDropdown) }
-    fun toggleCoursDropdown() = _uiState.update { it.copy(showCoursDropdown = !it.showCoursDropdown) }
-    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
-
-    //Sauvegarde
-
-    fun onSave(
-        onAdd: (Routine) -> Unit,
-        onUpdate: (Routine) -> Unit
-    ) {
+    private fun buildRoutineOrError(): Routine? {
         val state = _uiState.value
+        val nom = state.nom.trim()
+        val description = state.description.trim()
 
-        if (state.nom.isBlank()) {
+        if (nom.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Le nom est requis.") }
-            return
+            return null
         }
-        if (state.nom.trim().length > ValidationRules.MAX_ROUTINE_NOM_LENGTH) {
+        if (nom.length > ValidationRules.MAX_ROUTINE_NOM_LENGTH) {
             _uiState.update { it.copy(errorMessage = "Le nom de la routine est trop long.") }
-            return
+            return null
         }
-        if (state.description.trim().length > ValidationRules.MAX_ROUTINE_DESCRIPTION_LENGTH) {
+        if (description.length > ValidationRules.MAX_ROUTINE_DESCRIPTION_LENGTH) {
             _uiState.update { it.copy(errorMessage = "La description est trop longue.") }
-            return
+            return null
         }
         if (selectedDateTime == null) {
             _uiState.update { it.copy(errorMessage = "La date et l'heure sont requises.") }
-            return
+            return null
         }
-
-        val routine = Routine(
-            id = editingRoutineId,
         val categorie = state.categorie
         if (categorie == null) {
             _uiState.update { it.copy(errorMessage = "La categorie est requise.") }
-            return
+            return null
         }
         val priorite = state.priorite
         if (priorite == null) {
             _uiState.update { it.copy(errorMessage = "La priorite est requise.") }
-            return
+            return null
         }
 
-        val routine = Routine(
+        return Routine(
             id = currentRoutineId,
-            nom = state.nom.trim(),
-            description = state.description.trim(),
+            nom = nom,
+            description = description,
             date = selectedDateTime!!,
             repetabilite = state.repetabilite,
-            categorie = state.categorie ?: CategorieRoutine.AUTRE,
-            priorite = state.priorite ?: Priorite.BASSE,
-            coursId = state.coursId
-        )
-
-        if (editingRoutineId == null) {
-            onAdd(routine)
-        } else {
-            onUpdate(routine)
-        }
-
-        _uiState.update { it.copy(isSaved = true, errorMessage = null) }
-    }
-
-    //Suppression
-    fun onDelete(onDelete: (Int) -> Unit) {
-        editingRoutineId?.let { id ->
-            onDelete(id)
-            _uiState.update { it.copy(isDeleted = true) }
             categorie = categorie,
             priorite = priorite,
             coursId = state.coursId
         )
+    }
+
+    fun onSave() {
+        val routine = buildRoutineOrError() ?: return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -234,7 +219,13 @@ class RoutineFormViewModel @Inject constructor(
                     routineDao.updateRoutine(routine)
                 }
             }.onSuccess {
-                _uiState.update { it.copy(isLoading = false, isSaved = true, errorMessage = null) }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isSaved = true,
+                        errorMessage = null
+                    )
+                }
             }.onFailure {
                 _uiState.update {
                     it.copy(
@@ -247,24 +238,20 @@ class RoutineFormViewModel @Inject constructor(
     }
 
     fun onDelete() {
-        val routineId = currentRoutineId ?: return
+        val routine = buildRoutineOrError()?.takeIf { it.id != null } ?: return
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             runCatching {
-                routineDao.deleteRoutine(
-                    Routine(
-                        id = routineId,
-                        nom = _uiState.value.nom,
-                        description = _uiState.value.description,
-                        date = selectedDateTime ?: LocalDateTime.now(),
-                        repetabilite = _uiState.value.repetabilite,
-                        categorie = _uiState.value.categorie ?: CategorieRoutine.AUTRE,
-                        priorite = _uiState.value.priorite ?: Priorite.MOYENNE,
-                        coursId = _uiState.value.coursId
-                    )
-                )
+                routineDao.deleteRoutine(routine)
             }.onSuccess {
-                _uiState.update { it.copy(isLoading = false, isDeleted = true, errorMessage = null) }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isDeleted = true,
+                        errorMessage = null
+                    )
+                }
             }.onFailure {
                 _uiState.update {
                     it.copy(
