@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.homeworkmaxxing.data.local.CoursDao
 import com.example.homeworkmaxxing.data.local.RoutineDao
+import com.example.homeworkmaxxing.data.local.SessionDao
 import com.example.homeworkmaxxing.data.model.CategorieRoutine
 import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Priorite
@@ -20,7 +21,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -28,7 +32,8 @@ import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 class RoutineFormViewModel @Inject constructor(
     private val coursDao: CoursDao,
-    private val routineDao: RoutineDao
+    private val routineDao: RoutineDao,
+    private val sessionDao: SessionDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RoutineFormUiState())
@@ -37,19 +42,43 @@ class RoutineFormViewModel @Inject constructor(
     private val _coursList = MutableStateFlow<List<Cours>>(emptyList())
     val coursList: StateFlow<List<Cours>> = _coursList.asStateFlow()
 
+    private val _maxSelectableDateMillis = MutableStateFlow<Long?>(null)
+    val maxSelectableDateMillis: StateFlow<Long?> = _maxSelectableDateMillis.asStateFlow()
+
     private var currentRoutineId: Int? = null
     private var selectedDateTime: LocalDateTime? = null
+    private var sessionLastDay: LocalDate? = null
     private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy", Locale.FRENCH)
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH)
 
     init {
         observeCours()
+        observeSession()
     }
 
     private fun observeCours() {
         viewModelScope.launch {
             coursDao.getAllCours().collectLatest { cours ->
                 _coursList.value = cours
+            }
+        }
+    }
+
+    private fun observeSession() {
+        viewModelScope.launch {
+            sessionDao.observeSession().collectLatest { session ->
+                val lastDay = session?.let {
+                    Instant.ofEpochMilli(it.dateFin)
+                        .atZone(APP_ZONE_ID)
+                        .toLocalDate()
+                }
+                sessionLastDay = lastDay
+                _maxSelectableDateMillis.value = lastDay?.let { day ->
+                    day.plusDays(1)
+                        .atStartOfDay(APP_ZONE_ID)
+                        .toInstant()
+                        .toEpochMilli() - 1
+                }
             }
         }
     }
@@ -184,6 +213,18 @@ class RoutineFormViewModel @Inject constructor(
             _uiState.update { it.copy(errorMessage = "La date et l'heure sont requises.") }
             return null
         }
+        if (currentRoutineId == null && selectedDateTime!!.isBefore(LocalDateTime.now())) {
+            _uiState.update {
+                it.copy(errorMessage = "La date et l'heure ne peuvent pas être dans le passé.")
+            }
+            return null
+        }
+        if (sessionLastDay != null && selectedDateTime!!.toLocalDate().isAfter(sessionLastDay)) {
+            _uiState.update {
+                it.copy(errorMessage = "La date ne peut pas dépasser la date de fin de session.")
+            }
+            return null
+        }
         val categorie = state.categorie
         if (categorie == null) {
             _uiState.update { it.copy(errorMessage = "La categorie est requise.") }
@@ -261,5 +302,9 @@ class RoutineFormViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    companion object {
+        private val APP_ZONE_ID: ZoneId = ZoneId.of("America/Toronto")
     }
 }

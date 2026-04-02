@@ -53,13 +53,14 @@ class RoutineReminderReceiver : BroadcastReceiver() {
         }
 
         val content = buildString {
+            append("Dans 30 minutes ! ")
             if (routineDescription.isNotBlank()) {
                 append(routineDescription)
             } else {
-                append("Ta routine est planifiee maintenant.")
+                append("Ta routine commence bientot.")
             }
             if (timeLabel.isNotBlank()) {
-                append(" (")
+                append(" (Debut: ")
                 append(timeLabel)
                 append(")")
             }
@@ -81,6 +82,24 @@ class RoutineReminderReceiver : BroadcastReceiver() {
             if (routineId > 0) routineId else System.currentTimeMillis().toInt(),
             notification
         )
+
+        if (routineId > 0 && routineDateMillis > 0L) {
+            val signature = "$routineId:$routineDateMillis"
+            val prefs = context.getSharedPreferences(
+                RoutineReminderScheduler.PREFS_NAME,
+                Context.MODE_PRIVATE
+            )
+            val notified = prefs
+                .getStringSet(RoutineReminderScheduler.KEY_NOTIFIED_SIGNATURES, emptySet())
+                .orEmpty()
+                .toMutableSet()
+            if (notified.add(signature)) {
+                prefs.edit()
+                    .putStringSet(RoutineReminderScheduler.KEY_NOTIFIED_SIGNATURES, notified)
+                    .apply()
+            }
+        }
+
         Log.d("RoutineReminderReceiver", "Notification shown for routineId=$routineId")
     }
 

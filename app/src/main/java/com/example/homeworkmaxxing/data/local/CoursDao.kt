@@ -33,6 +33,9 @@ interface CoursDao {
     @Query("SELECT COUNT(*) FROM cours")
     suspend fun countCours(): Int
 
+    @Query("DELETE FROM cours")
+    suspend fun deleteAllCours()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllCours(cours: List<Cours>): List<Long>
 }

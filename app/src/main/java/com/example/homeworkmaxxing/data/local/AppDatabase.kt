@@ -5,14 +5,16 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Routine
+import com.example.homeworkmaxxing.data.model.Session
 
 @Database(
-    entities = [Routine::class, Cours::class],
-    version = 3,
+    entities = [Routine::class, Cours::class, Session::class],
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(RoomConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun routineDao(): RoutineDao
     abstract fun coursDao(): CoursDao
+    abstract fun sessionDao(): SessionDao
 }

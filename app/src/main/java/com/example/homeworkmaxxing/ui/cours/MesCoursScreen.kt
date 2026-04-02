@@ -36,6 +36,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +51,7 @@ import com.example.homeworkmaxxing.data.model.Cours
 fun MesCoursPage(
     viewModel: MesCoursViewModel,
     onBackClick: (() -> Unit)? = null,
+    showSetupDialog: Boolean = false,
     onOpenDrawer: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onAddCoursClick: () -> Unit = {},
@@ -58,6 +62,7 @@ fun MesCoursPage(
     MesCoursScreen(
         uiState = uiState,
         onBackClick = onBackClick,
+        showSetupDialog = showSetupDialog,
         onOpenDrawer = onOpenDrawer,
         onSettingsClick = onSettingsClick,
         onAddCoursClick = onAddCoursClick,
@@ -72,6 +77,7 @@ fun MesCoursPage(
 fun MesCoursScreen(
     uiState: MesCoursUiState,
     onBackClick: (() -> Unit)?,
+    showSetupDialog: Boolean,
     onOpenDrawer: () -> Unit,
     onSettingsClick: () -> Unit,
     onAddCoursClick: () -> Unit,
@@ -80,6 +86,8 @@ fun MesCoursScreen(
     onDismissDeleteDialog: () -> Unit,
     onConfirmDeleteCours: () -> Unit
 ) {
+    var setupDialogVisible by remember(showSetupDialog) { mutableStateOf(showSetupDialog) }
+
     Scaffold(
         containerColor = Color(0xFFF8F8F8),
         floatingActionButton = {
@@ -201,6 +209,24 @@ fun MesCoursScreen(
                 cours = cours,
                 onDismiss = onDismissDeleteDialog,
                 onConfirm = onConfirmDeleteCours
+            )
+        }
+
+        if (setupDialogVisible) {
+            AlertDialog(
+                onDismissRequest = { setupDialogVisible = false },
+                title = { Text("Ajoutez des Cours") },
+                text = {
+                    Text(
+                        "Ajoutez les cours de votre session afin de mieux organiser vos routines, " +
+                            "vous pourrez revenir gérer vos cours en accédant à l'onglet \"Cours\" du menu."
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { setupDialogVisible = false }) {
+                        Text("OK")
+                    }
+                }
             )
         }
     }
