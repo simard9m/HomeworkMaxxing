@@ -70,10 +70,6 @@ import com.example.homeworkmaxxing.data.model.Routine
 import com.example.homeworkmaxxing.util.ValidationRules
 import java.util.Calendar
 
-// ─────────────────────────────────────────────
-// Entry point
-// ─────────────────────────────────────────────
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RoutineFormScreen(
@@ -221,7 +217,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            //Date & Heure
+            //Date / Heure
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -256,7 +252,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(4.dp))
 
-            //Répétition
+            //Repetition
             FormDropdownRow(
                 label = "Répétition",
                 value = uiState.repetabilite.toLabel(),
@@ -284,7 +280,7 @@ fun RoutineFormScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            //Catégorie
+            //Cat
             FormDropdownRow(
                 label = "Catégorie",
                 value = uiState.categorie?.toLabel() ?: "",
@@ -356,7 +352,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            //Priorité
+            //Priorite
             PrioriteToggleRow(
                 selected = uiState.priorite,
                 onSelected = viewModel::onPrioriteSelected
@@ -364,7 +360,7 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            //Message d'erreur
+            //Message derreur
             uiState.errorMessage?.let { msg ->
                 Text(
                     text = msg,
@@ -394,10 +390,6 @@ fun RoutineFormScreen(
         }
     }
 }
-
-// ─────────────────────────────────────────────
-// Top bar
-// ─────────────────────────────────────────────
 
 @Composable
 private fun RoutineFormTopBar(
@@ -442,9 +434,6 @@ private fun RoutineFormTopBar(
     }
 }
 
-// ─────────────────────────────────────────────
-//Dropdown
-// ─────────────────────────────────────────────
 
 @Composable
 private fun FormDropdownRow(
@@ -506,9 +495,6 @@ private fun FormDropdownRow(
     }
 }
 
-// ─────────────────────────────────────────────
-// Priorité
-// ─────────────────────────────────────────────
 
 @Composable
 private fun PrioriteToggleRow(
@@ -597,10 +583,6 @@ private fun PrioriteIconButton(
         )
     }
 }
-
-// ─────────────────────────────────────────────
-// Extensions
-// ─────────────────────────────────────────────
 
 fun Repetabilite.toLabel() = when (this) {
     Repetabilite.AUCUNE       -> "Ne pas répéter"

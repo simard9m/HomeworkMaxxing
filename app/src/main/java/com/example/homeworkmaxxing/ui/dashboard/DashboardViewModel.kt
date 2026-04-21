@@ -44,46 +44,6 @@ class DashboardViewModel @Inject constructor(
         observeDatabase()
     }
 
-    fun addRoutine(routine: Routine) {
-        viewModelScope.launch {
-            routineDao.insertRoutine(routine)
-        }
-    }
-
-    fun updateRoutine(routine: Routine) {
-        viewModelScope.launch {
-            routine.id?.let {
-                routineDao.updateRoutine(routine)
-            }
-        }
-    }
-
-    fun deleteRoutine(routine: Routine) {
-        viewModelScope.launch {
-            routine.id?.let {
-                routineDao.deleteRoutine(routine)
-            }
-        }
-    }
-
-    fun addCours(cours: Cours) {
-        viewModelScope.launch {
-            coursDao.insertCours(cours)
-        }
-    }
-
-    fun updateCours(cours: Cours) {
-        viewModelScope.launch {
-            coursDao.updateCours(cours)
-        }
-    }
-
-    fun deleteCours(cours: Cours) {
-        viewModelScope.launch {
-            coursDao.deleteCours(cours)
-        }
-    }
-
     fun createSessionDate(year: Int, month: Int, day: Int) {
         upsertSessionDate(year, month, day)
     }

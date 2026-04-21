@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.homeworkmaxxing.util.ValidationRules
 
-private val courseColors = listOf(
+private val coursColors = listOf(
     0xFFF7C8D0,
     0xFFFFDCA8,
     0xFFD9F2B4,
@@ -234,8 +234,8 @@ private fun ColorPickerSection(
     onColorSelected: (Long) -> Unit
 ) {
     val rows = listOf(
-        courseColors.take(4),
-        courseColors.drop(4)
+        coursColors.take(4),
+        coursColors.drop(4)
     )
 
     Column(
