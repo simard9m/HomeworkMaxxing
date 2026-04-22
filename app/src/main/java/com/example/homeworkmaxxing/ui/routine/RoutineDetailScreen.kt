@@ -142,23 +142,23 @@ fun RoutineDetailPage(
                             )
                             DetailRow(
                                 icon = Icons.Default.Category,
-                                label = "Categorie",
+                                label = "Catégorie",
                                 value = routine.categorie.toLabel()
                             )
                             DetailRow(
                                 icon = Icons.Default.Refresh,
-                                label = "Repetition",
+                                label = "Répétition",
                                 value = routine.repetabilite.toLabel()
                             )
                             DetailRow(
                                 icon = Icons.Default.Star,
-                                label = "Priorite",
+                                label = "Priorité",
                                 value = routine.priorite.toLabel()
                             )
                             DetailRow(
                                 icon = Icons.Default.CheckCircle,
                                 label = "Statut",
-                                value = if (routine.estCompletee) "Completee" else "A faire"
+                                value = if (routine.estCompletee) "Complétée" else "À faire"
                             )
                         }
                     }
@@ -196,7 +196,7 @@ private fun RoutineDetailTopBar(
     onBackClick: () -> Unit
 ) {
     HomeworkTopBar(
-        title = "Details de la routine",
+        title = "Détails de la routine",
         navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")

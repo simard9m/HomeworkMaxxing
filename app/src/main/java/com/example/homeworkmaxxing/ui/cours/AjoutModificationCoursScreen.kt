@@ -203,7 +203,7 @@ fun AjoutModificationCoursScreen(
                                         text = if (uiState.isEditMode) {
                                             "Enregistrer"
                                         } else {
-                                            "Creer"
+                                            "Créer"
                                         }
                                     )
                                 }
@@ -259,7 +259,7 @@ private fun PreviewCoursCard(
     nom: String,
     couleurHex: Long
 ) {
-    val displayName = if (nom.isBlank()) "Apercu du cours" else nom
+    val displayName = if (nom.isBlank()) "Aperçu du cours" else nom
 
     Card(
         modifier = Modifier.fillMaxWidth(),

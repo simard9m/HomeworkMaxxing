@@ -78,7 +78,6 @@ class RoutineReminderScheduler @Inject constructor(
         if (triggerAtMillis <= now) {
             val delay = now - triggerAtMillis
             if (routineStartMillis > now || delay <= PAST_TRIGGER_GRACE_MS) {
-                // If we're inside the 30-minute window, notify only once.
                 if (notifiedSignatures.add(signature)) {
                     context.sendBroadcast(reminderIntent)
                 } else {

@@ -75,7 +75,7 @@ class CoursFormViewModel @Inject constructor(
         }
         if (trimmedName.length > ValidationRules.MAX_COURS_NOM_LENGTH) {
             _uiState.update {
-                it.copy(nomError = "Maximum ${ValidationRules.MAX_COURS_NOM_LENGTH} caractères.")
+                it.copy(nomError = "Maximum ${ValidationRules.MAX_COURS_NOM_LENGTH} caractÃ¨res.")
             }
             return
         }

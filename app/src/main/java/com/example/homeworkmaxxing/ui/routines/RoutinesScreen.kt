@@ -376,7 +376,7 @@ private fun RoutinesFilters(
                 FilterChip(
                     selected = uiState.selectedRepetabilites.isEmpty(),
                     onClick = { onRepetabiliteSelected(null) },
-                    label = { Text("Toutes les repetitions") }
+                    label = { Text("Toutes les répétitions") }
                 )
             }
             items(Repetabilite.entries) { repetabilite ->
@@ -394,7 +394,7 @@ private fun RoutinesFilters(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Afficher les taches completees",
+                text = "Afficher les tâches complétées",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium
             )
@@ -569,9 +569,9 @@ private fun RoutineCard(
                         Icons.Default.RadioButtonUnchecked
                     },
                     contentDescription = if (routine.estCompletee) {
-                        "Marquer incomplete"
+                        "Marquer incomplète"
                     } else {
-                        "Marquer completee"
+                        "Marquer complétée"
                     },
                     tint = if (routine.estCompletee) Color(0xFF6750A4) else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -616,12 +616,12 @@ private fun EmptyRoutinesMessage() {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Aucune routine a afficher",
+                text = "Aucune routine à afficher",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "Modifiez les filtres ou creez une nouvelle routine en appuyant sur le bouton \"+\".",
+                text = "Modifiez les filtres ou créez une nouvelle routine en appuyant sur le bouton \"+\".",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

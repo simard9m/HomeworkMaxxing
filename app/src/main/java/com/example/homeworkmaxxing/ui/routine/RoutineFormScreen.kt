@@ -57,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -87,27 +88,13 @@ fun RoutineFormScreen(
     val isEditing = existingRoutine != null
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    //Charger la routine existante
     LaunchedEffect(existingRoutine) {
         existingRoutine?.let { viewModel.loadRoutine(it) }
     }
 
-    //Naviguer apres sauvegarde / suppression
     LaunchedEffect(uiState.isSaved) { if (uiState.isSaved) onSaved() }
     LaunchedEffect(uiState.isDeleted) { if (uiState.isDeleted) onDelete?.invoke() }
 
-    // Afficher l'erreur si presente
-    uiState.errorMessage?.let { error ->
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(error, color = MaterialTheme.colorScheme.error)
-        }
-        return
-    }
-
-    //Date picker
     if (uiState.showDatePicker) {
         val cal = Calendar.getInstance()
         val startOfTodayMillis = Calendar.getInstance().apply {
@@ -131,7 +118,6 @@ fun RoutineFormScreen(
         }.show()
     }
 
-    //Time picker
     if (uiState.showTimePicker) {
         val cal = Calendar.getInstance()
         TimePickerDialog(
@@ -145,12 +131,11 @@ fun RoutineFormScreen(
         }.show()
     }
 
-    //Dialog de confirmation de suppression
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Supprimer la routine") },
-            text = { Text("Cette action est irreversible. Voulez-vous vraiment supprimer cette routine ?") },
+            text = { Text("Cette action est irréversible. Voulez-vous vraiment supprimer cette routine ?") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
@@ -186,7 +171,6 @@ fun RoutineFormScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            //Nom
             OutlinedTextField(
                 value = uiState.nom,
                 onValueChange = viewModel::onNomChange,
@@ -207,7 +191,6 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            //Description
             OutlinedTextField(
                 value = uiState.description,
                 onValueChange = viewModel::onDescriptionChange,
@@ -229,7 +212,6 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            //Date / Heure
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -264,11 +246,11 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(4.dp))
 
-            //Repetition
             FormDropdownRow(
-                label = "Repetition",
+                label = "Répétition",
                 value = uiState.repetabilite.toLabel(),
                 leadingIcon = Icons.Default.Refresh,
+                enabled = !isEditing,
                 expanded = uiState.showRepetitionDropdown,
                 onToggle = viewModel::toggleRepetitionDropdown
             ) {
@@ -292,9 +274,8 @@ fun RoutineFormScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            //Cat
             FormDropdownRow(
-                label = "Categorie",
+                label = "Catégorie",
                 value = uiState.categorie?.toLabel() ?: "",
                 leadingIcon = Icons.Default.Category,
                 expanded = uiState.showCategorieDropdown,
@@ -320,7 +301,6 @@ fun RoutineFormScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            //Cours
             FormDropdownRow(
                 label = "Cours",
                 value = coursList.find { it.id == uiState.coursId }?.nom ?: "",
@@ -364,7 +344,6 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            //Priorite
             PrioriteToggleRow(
                 selected = uiState.priorite,
                 onSelected = viewModel::onPrioriteSelected
@@ -372,7 +351,6 @@ fun RoutineFormScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            //Message derreur
             uiState.errorMessage?.let { msg ->
                 Text(
                     text = msg,
@@ -393,7 +371,7 @@ fun RoutineFormScreen(
                 )
             ) {
                 Text(
-                    text = if (isEditing) "Enregistrer les modifications" else "Creer la routine",
+                    text = if (isEditing) "Enregistrer les modifications" else "Créer la routine",
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -435,15 +413,26 @@ private fun FormDropdownRow(
     label: String,
     value: String,
     leadingIcon: ImageVector,
+    enabled: Boolean = true,
     expanded: Boolean,
     onToggle: () -> Unit,
     content: @Composable () -> Unit
 ) {
+    val disabledAlpha = 0.5f
+    val effectiveAlpha = if (enabled) 1f else disabledAlpha
+
     Box {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onToggle() }
+                .alpha(effectiveAlpha)
+                .then(
+                    if (enabled) {
+                        Modifier.clickable { onToggle() }
+                    } else {
+                        Modifier
+                    }
+                )
                 .padding(horizontal = 12.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -482,7 +471,7 @@ private fun FormDropdownRow(
         }
 
         DropdownMenu(
-            expanded = expanded,
+            expanded = expanded && enabled,
             onDismissRequest = onToggle
         ) {
             content()
@@ -512,7 +501,7 @@ private fun PrioriteToggleRow(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Priorite",
+                text = "Priorité",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -580,7 +569,7 @@ private fun PrioriteIconButton(
 }
 
 fun Repetabilite.toLabel() = when (this) {
-    Repetabilite.AUCUNE       -> "Ne pas repeter"
+    Repetabilite.AUCUNE       -> "Ne pas répéter"
     Repetabilite.QUOTIDIEN    -> "Chaque jour"
     Repetabilite.HEBDOMADAIRE -> "Chaque semaine"
     Repetabilite.MENSUEL      -> "Chaque mois"
@@ -590,7 +579,7 @@ fun CategorieRoutine.toLabel() = when (this) {
     CategorieRoutine.EXAMEN  -> "Examen"
     CategorieRoutine.DEVOIR  -> "Devoir"
     CategorieRoutine.PROJET  -> "Projet"
-    CategorieRoutine.ETUDE   -> "Etude"
+    CategorieRoutine.ETUDE   -> "Étude"
     CategorieRoutine.AUTRE   -> "Autre"
 }
 

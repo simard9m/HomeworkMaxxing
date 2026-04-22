@@ -155,6 +155,7 @@ class RoutineFormViewModel @Inject constructor(
     }
 
     fun onRepetabiliteSelected(rep: Repetabilite) = _uiState.update {
+        if (currentRoutineId != null) return@update it.copy(showRepetitionDropdown = false)
         it.copy(
             repetabilite = rep,
             showRepetitionDropdown = false,
@@ -183,6 +184,7 @@ class RoutineFormViewModel @Inject constructor(
     fun dismissTimePicker() = _uiState.update { it.copy(showTimePicker = false) }
 
     fun toggleRepetitionDropdown() = _uiState.update {
+        if (currentRoutineId != null) return@update it.copy(showRepetitionDropdown = false)
         it.copy(showRepetitionDropdown = !it.showRepetitionDropdown)
     }
 
@@ -217,24 +219,24 @@ class RoutineFormViewModel @Inject constructor(
         }
         if (currentRoutineId == null && selectedDateTime!!.isBefore(LocalDateTime.now())) {
             _uiState.update {
-                it.copy(errorMessage = "La date et l'heure ne peuvent pas �tre dans le pass�.")
+                it.copy(errorMessage = "La date et l'heure ne peuvent pas être dans le passé.")
             }
             return null
         }
         if (sessionLastDay != null && selectedDateTime!!.toLocalDate().isAfter(sessionLastDay)) {
             _uiState.update {
-                it.copy(errorMessage = "La date ne peut pas d�passer la date de fin de session.")
+                it.copy(errorMessage = "La date ne peut pas dépasser la date de fin de session.")
             }
             return null
         }
         val categorie = state.categorie
         if (categorie == null) {
-            _uiState.update { it.copy(errorMessage = "La cat�gorie est requise.") }
+            _uiState.update { it.copy(errorMessage = "La catégorie est requise.") }
             return null
         }
         val priorite = state.priorite
         if (priorite == null) {
-            _uiState.update { it.copy(errorMessage = "La priorit� est requise.") }
+            _uiState.update { it.copy(errorMessage = "La priorité est requise.") }
             return null
         }
 
@@ -339,3 +341,4 @@ class RoutineFormViewModel @Inject constructor(
         private val APP_ZONE_ID: ZoneId = ZoneId.of("America/Toronto")
     }
 }
+

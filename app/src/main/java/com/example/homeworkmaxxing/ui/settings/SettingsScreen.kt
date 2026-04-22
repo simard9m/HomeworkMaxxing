@@ -148,7 +148,7 @@ fun SettingsPage(
 @Composable
 private fun SettingsTopBar(onBackClick: () -> Unit) {
     HomeworkTopBar(
-        title = "Parametres",
+        title = "Paramètres",
         navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
@@ -207,7 +207,7 @@ private fun SettingsContent(
                 )
 
                 Text(
-                    text = "Choisir une nouvelle date remplace la date active. Les cours et routines ne sont pas supprimes.",
+                    text = "Choisir une nouvelle date remplace la date active. Les cours et routines ne sont pas supprimés.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -248,7 +248,7 @@ private fun SettingsContent(
                 }
 
                 Text(
-                    text = "Supprimer tous les cours supprimera aussi les routines liees aux cours. Cette option supprime explicitement les deux listes.",
+                    text = "Supprimer tous les cours supprimera aussi les routines liées aux cours. Cette option supprime explicitement les deux listes.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

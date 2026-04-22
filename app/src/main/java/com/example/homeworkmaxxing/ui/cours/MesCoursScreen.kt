@@ -197,7 +197,7 @@ fun MesCoursScreen(
                 text = {
                     Text(
                         "Ajoutez les cours de votre session afin de mieux organiser vos routines, " +
-                            "vous pourrez revenir gerer vos cours en accedant a l'onglet \"Cours\" du menu."
+                            "vous pourrez revenir gérer vos cours en accédant à l'onglet \"Cours\" du menu."
                     )
                 },
                 confirmButton = {
@@ -280,7 +280,7 @@ private fun DeleteCoursDialog(
             Text("Supprimer")
         },
         text = {
-            Text("Etes-vous sur de vouloir supprimer le cours \"${cours.nom}\" ?")
+            Text("Êtes-vous sûr de vouloir supprimer le cours \"${cours.nom}\" ?")
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
