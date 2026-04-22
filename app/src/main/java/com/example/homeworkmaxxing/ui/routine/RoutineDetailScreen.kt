@@ -23,9 +23,9 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -44,6 +44,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.homeworkmaxxing.data.model.Routine
+import com.example.homeworkmaxxing.ui.components.HomeworkTopBar
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -52,15 +54,14 @@ import java.util.Locale
 fun RoutineDetailPage(
     viewModel: RoutineDetailViewModel,
     onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onEditClick: (Routine) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
             RoutineDetailTopBar(
-                onBackClick = onBackClick,
-                onSettingsClick = onSettingsClick
+                onBackClick = onBackClick
             )
         }
     ) { paddingValues ->
@@ -112,11 +113,22 @@ fun RoutineDetailPage(
                             modifier = Modifier.padding(18.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            Text(
-                                text = routine.nom,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = routine.nom,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(onClick = { onEditClick(routine) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Modifier la routine"
+                                    )
+                                }
+                            }
 
                             DetailRow(
                                 icon = Icons.Default.CalendarMonth,
@@ -181,39 +193,16 @@ fun RoutineDetailPage(
 
 @Composable
 private fun RoutineDetailTopBar(
-    onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onBackClick: () -> Unit
 ) {
-    Surface(
-        tonalElevation = 1.dp,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFB388FF)),
-        modifier = Modifier
-            .statusBarsPadding()
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    HomeworkTopBar(
+        title = "Details de la routine",
+        navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
             }
-            Text(
-                text = "Details de la routine",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = onSettingsClick) {
-                Icon(Icons.Default.Settings, contentDescription = "Parametres")
-            }
         }
-    }
+    )
 }
 
 @Composable
@@ -254,3 +243,4 @@ private fun DetailRowHeader(
         )
     }
 }
+

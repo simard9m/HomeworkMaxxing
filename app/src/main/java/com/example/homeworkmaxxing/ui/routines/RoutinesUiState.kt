@@ -10,8 +10,8 @@ data class RoutinesUiState(
     val routines: List<Routine> = emptyList(),
     val cours: List<Cours> = emptyList(),
     val isLoading: Boolean = false,
-    val selectedCategorie: CategorieRoutine? = null,
-    val selectedCoursId: Long? = null,
-    val selectedRepetabilite: Repetabilite? = null,
+    val selectedCategories: Set<CategorieRoutine> = emptySet(),
+    val selectedCoursIds: Set<Long> = emptySet(),
+    val selectedRepetabilites: Set<Repetabilite> = emptySet(),
     val showCompleted: Boolean = false
 )

@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.homeworkmaxxing.ui.components.HomeworkTopBar
 import com.example.homeworkmaxxing.util.ValidationRules
 
 private val coursColors = listOf(
@@ -56,8 +56,7 @@ fun AjoutModificationCoursPage(
     viewModel: CoursFormViewModel,
     coursId: Long = -1L,
     onBackClick: () -> Unit = {},
-    onSaveSuccess: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onSaveSuccess: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -79,7 +78,6 @@ fun AjoutModificationCoursPage(
     AjoutModificationCoursScreen(
         uiState = uiState,
         onBackClick = onBackClick,
-        onSettingsClick = onSettingsClick,
         onNomChange = viewModel::onNomChange,
         onColorSelected = viewModel::onColorSelected,
         onSaveClick = viewModel::saveCours
@@ -90,7 +88,6 @@ fun AjoutModificationCoursPage(
 fun AjoutModificationCoursScreen(
     uiState: CoursFormUiState,
     onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit,
     onNomChange: (String) -> Unit,
     onColorSelected: (Long) -> Unit,
     onSaveClick: () -> Unit
@@ -98,38 +95,17 @@ fun AjoutModificationCoursScreen(
     Scaffold(
         containerColor = Color(0xFFF8F8F8),
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFF8F8F8))
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Retour"
-                    )
+            HomeworkTopBar(
+                title = if (uiState.isEditMode) "Modifier un cours" else "Ajouter un cours",
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Retour"
+                        )
+                    }
                 }
-
-                Text(
-                    text = if (uiState.isEditMode) {
-                        "Modifier un cours"
-                    } else {
-                        "Ajouter un cours"
-                    },
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-
-                IconButton(onClick = onSettingsClick) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Parametres"
-                    )
-                }
-            }
+            )
         }
     ) { innerPadding ->
         if (uiState.isLoading) {
@@ -227,7 +203,7 @@ fun AjoutModificationCoursScreen(
                                         text = if (uiState.isEditMode) {
                                             "Enregistrer"
                                         } else {
-                                            "Créer"
+                                            "Creer"
                                         }
                                     )
                                 }
@@ -283,7 +259,7 @@ private fun PreviewCoursCard(
     nom: String,
     couleurHex: Long
 ) {
-    val displayName = if (nom.isBlank()) "Aperçu du cours" else nom
+    val displayName = if (nom.isBlank()) "Apercu du cours" else nom
 
     Card(
         modifier = Modifier.fillMaxWidth(),

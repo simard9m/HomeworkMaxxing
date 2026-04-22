@@ -23,9 +23,9 @@ class RoutinesViewModel @Inject constructor(
     private val routineReminderScheduler: RoutineReminderScheduler
 ) : ViewModel() {
 
-    private val selectedCategorie = MutableStateFlow<CategorieRoutine?>(null)
-    private val selectedCoursId = MutableStateFlow<Long?>(null)
-    private val selectedRepetabilite = MutableStateFlow<Repetabilite?>(null)
+    private val selectedCategories = MutableStateFlow<Set<CategorieRoutine>>(emptySet())
+    private val selectedCoursIds = MutableStateFlow<Set<Long>>(emptySet())
+    private val selectedRepetabilites = MutableStateFlow<Set<Repetabilite>>(emptySet())
     private val showCompleted = MutableStateFlow(false)
 
     private val _uiState = MutableStateFlow(RoutinesUiState(isLoading = true))
@@ -36,15 +36,27 @@ class RoutinesViewModel @Inject constructor(
     }
 
     fun setCategorieFilter(categorie: CategorieRoutine?) {
-        selectedCategorie.value = categorie
+        selectedCategories.value = if (categorie == null) {
+            emptySet()
+        } else {
+            selectedCategories.value.toggle(categorie)
+        }
     }
 
     fun setCoursFilter(coursId: Long?) {
-        selectedCoursId.value = coursId
+        selectedCoursIds.value = if (coursId == null) {
+            emptySet()
+        } else {
+            selectedCoursIds.value.toggle(coursId)
+        }
     }
 
     fun setRepetabiliteFilter(repetabilite: Repetabilite?) {
-        selectedRepetabilite.value = repetabilite
+        selectedRepetabilites.value = if (repetabilite == null) {
+            emptySet()
+        } else {
+            selectedRepetabilites.value.toggle(repetabilite)
+        }
     }
 
     fun setShowCompleted(show: Boolean) {
@@ -74,19 +86,25 @@ class RoutinesViewModel @Inject constructor(
 
             combine(
                 dataFlow,
-                selectedCategorie,
-                selectedCoursId,
-                selectedRepetabilite,
+                selectedCategories,
+                selectedCoursIds,
+                selectedRepetabilites,
                 showCompleted
-            ) { data, categorie, coursId, repetabilite, showCompleted ->
+            ) { data, categories, coursIds, repetabilites, showCompleted ->
                 val (allRoutines, cours) = data
                 routineReminderScheduler.syncReminders(allRoutines)
 
                 val filteredRoutines = allRoutines
                     .filter { routine -> showCompleted || !routine.estCompletee }
-                    .filter { routine -> categorie == null || routine.categorie == categorie }
-                    .filter { routine -> coursId == null || routine.coursId == coursId }
-                    .filter { routine -> repetabilite == null || routine.repetabilite == repetabilite }
+                    .filter { routine ->
+                        categories.isEmpty() || categories.contains(routine.categorie)
+                    }
+                    .filter { routine ->
+                        coursIds.isEmpty() || (routine.coursId != null && coursIds.contains(routine.coursId))
+                    }
+                    .filter { routine ->
+                        repetabilites.isEmpty() || repetabilites.contains(routine.repetabilite)
+                    }
                     .sortedBy { it.date }
 
                 RoutinesUiState(
@@ -94,9 +112,9 @@ class RoutinesViewModel @Inject constructor(
                     routines = filteredRoutines,
                     cours = cours,
                     isLoading = false,
-                    selectedCategorie = categorie,
-                    selectedCoursId = coursId,
-                    selectedRepetabilite = repetabilite,
+                    selectedCategories = categories,
+                    selectedCoursIds = coursIds,
+                    selectedRepetabilites = repetabilites,
                     showCompleted = showCompleted
                 )
             }.collect { state ->
@@ -104,4 +122,8 @@ class RoutinesViewModel @Inject constructor(
             }
         }
     }
+}
+
+private fun <T> Set<T>.toggle(item: T): Set<T> {
+    return if (contains(item)) this - item else this + item
 }

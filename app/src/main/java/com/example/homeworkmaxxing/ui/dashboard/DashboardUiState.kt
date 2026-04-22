@@ -13,6 +13,7 @@ data class DashboardUiState(
     val routines: List<Routine> = emptyList(),
     val cours: List<Cours> = emptyList(),
     val isLoading: Boolean = false,
+    val errorMessage: String? = null,
     val sessionState: SessionState = SessionState.NO_SESSION,
     val sessionDateFin: Long? = null
 )

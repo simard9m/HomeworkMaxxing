@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
@@ -68,6 +67,7 @@ import com.example.homeworkmaxxing.data.model.CategorieRoutine
 import com.example.homeworkmaxxing.data.model.Priorite
 import com.example.homeworkmaxxing.data.model.Repetabilite
 import com.example.homeworkmaxxing.data.model.Routine
+import com.example.homeworkmaxxing.ui.components.HomeworkTopBar
 import com.example.homeworkmaxxing.util.ValidationRules
 import java.util.Calendar
 
@@ -78,8 +78,7 @@ fun RoutineFormScreen(
     existingRoutine: Routine? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    onDelete: (() -> Unit)? = null,
-    onSettingsClick: () -> Unit = {}
+    onDelete: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val coursList by viewModel.coursList.collectAsStateWithLifecycle()
@@ -93,9 +92,20 @@ fun RoutineFormScreen(
         existingRoutine?.let { viewModel.loadRoutine(it) }
     }
 
-    //Naviguer après sauvegarde / suppression
+    //Naviguer apres sauvegarde / suppression
     LaunchedEffect(uiState.isSaved) { if (uiState.isSaved) onSaved() }
     LaunchedEffect(uiState.isDeleted) { if (uiState.isDeleted) onDelete?.invoke() }
+
+    // Afficher l'erreur si presente
+    uiState.errorMessage?.let { error ->
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(error, color = MaterialTheme.colorScheme.error)
+        }
+        return
+    }
 
     //Date picker
     if (uiState.showDatePicker) {
@@ -140,7 +150,7 @@ fun RoutineFormScreen(
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Supprimer la routine") },
-            text = { Text("Cette action est irréversible. Voulez-vous vraiment supprimer cette routine ?") },
+            text = { Text("Cette action est irreversible. Voulez-vous vraiment supprimer cette routine ?") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false
@@ -162,7 +172,6 @@ fun RoutineFormScreen(
             RoutineFormTopBar(
                 isEditing = isEditing,
                 onBack = onBack,
-                onSettingsClick = onSettingsClick,
                 onDelete = if (isEditing && onDelete != null) {
                     { showDeleteConfirm = true }
                 } else null
@@ -257,7 +266,7 @@ fun RoutineFormScreen(
 
             //Repetition
             FormDropdownRow(
-                label = "Répétition",
+                label = "Repetition",
                 value = uiState.repetabilite.toLabel(),
                 leadingIcon = Icons.Default.Refresh,
                 expanded = uiState.showRepetitionDropdown,
@@ -285,7 +294,7 @@ fun RoutineFormScreen(
 
             //Cat
             FormDropdownRow(
-                label = "Catégorie",
+                label = "Categorie",
                 value = uiState.categorie?.toLabel() ?: "",
                 leadingIcon = Icons.Default.Category,
                 expanded = uiState.showCategorieDropdown,
@@ -384,7 +393,7 @@ fun RoutineFormScreen(
                 )
             ) {
                 Text(
-                    text = if (isEditing) "Enregistrer les modifications" else "Créer la routine",
+                    text = if (isEditing) "Enregistrer les modifications" else "Creer la routine",
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -398,36 +407,16 @@ fun RoutineFormScreen(
 private fun RoutineFormTopBar(
     isEditing: Boolean,
     onBack: () -> Unit,
-    onSettingsClick: () -> Unit,
     onDelete: (() -> Unit)?
 ) {
-    Surface(
-        tonalElevation = 1.dp,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFB388FF)),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    HomeworkTopBar(
+        title = if (isEditing) "Modifier la routine" else "Nouvelle routine",
+        navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
             }
-            Text(
-                text = if (isEditing) "Modifier la routine" else "Nouvelle routine",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = onSettingsClick) {
-                Icon(Icons.Default.Settings, contentDescription = "Parametres")
-            }
+        },
+        actions = {
             if (onDelete != null) {
                 IconButton(onClick = onDelete) {
                     Icon(
@@ -438,9 +427,8 @@ private fun RoutineFormTopBar(
                 }
             }
         }
-    }
+    )
 }
-
 
 @Composable
 private fun FormDropdownRow(
@@ -524,7 +512,7 @@ private fun PrioriteToggleRow(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Priorité",
+                text = "Priorite",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -592,7 +580,7 @@ private fun PrioriteIconButton(
 }
 
 fun Repetabilite.toLabel() = when (this) {
-    Repetabilite.AUCUNE       -> "Ne pas répéter"
+    Repetabilite.AUCUNE       -> "Ne pas repeter"
     Repetabilite.QUOTIDIEN    -> "Chaque jour"
     Repetabilite.HEBDOMADAIRE -> "Chaque semaine"
     Repetabilite.MENSUEL      -> "Chaque mois"
@@ -602,7 +590,7 @@ fun CategorieRoutine.toLabel() = when (this) {
     CategorieRoutine.EXAMEN  -> "Examen"
     CategorieRoutine.DEVOIR  -> "Devoir"
     CategorieRoutine.PROJET  -> "Projet"
-    CategorieRoutine.ETUDE   -> "Étude"
+    CategorieRoutine.ETUDE   -> "Etude"
     CategorieRoutine.AUTRE   -> "Autre"
 }
 

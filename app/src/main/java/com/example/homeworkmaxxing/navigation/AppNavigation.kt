@@ -48,8 +48,8 @@ fun AppNavigation() {
             RoutinesPage(
                 viewModel = hiltViewModel(),
                 onBackClick = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAddRoutineClick = { navController.navigate(Screen.RoutineForm.route) },
+                onAddCoursClick = { navController.navigate(Screen.CoursForm.createRoute()) },
                 onRoutineClick = { routine ->
                     routine.id?.let { routineId ->
                         navController.navigate(Screen.RoutineDetail.createRoute(routineId))
@@ -75,7 +75,11 @@ fun AppNavigation() {
             RoutineDetailPage(
                 viewModel = routineDetailViewModel,
                 onBackClick = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                onEditClick = { routine ->
+                    routine.id?.let { routineId ->
+                        navController.navigate(Screen.EditRoutine.createRoute(routineId))
+                    }
+                }
             )
         }
 
@@ -85,8 +89,7 @@ fun AppNavigation() {
                 viewModel = routineFormViewModel,
                 existingRoutine = null,
                 onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                onSaved = { navController.popBackStack() }
             )
         }
 
@@ -110,8 +113,7 @@ fun AppNavigation() {
                 existingRoutine = existingRoutine,
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
-                onDelete = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                onDelete = { navController.popBackStack() }
             )
         }
 
@@ -138,7 +140,6 @@ fun AppNavigation() {
                 viewModel = hiltViewModel(),
                 onBackClick = { navController.popBackStack() },
                 showSetupDialog = showSetupDialog,
-                onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAddCoursClick = {
                     navController.navigate(Screen.CoursForm.createRoute())
                 },
@@ -163,8 +164,7 @@ fun AppNavigation() {
                 viewModel = hiltViewModel(),
                 coursId = coursId,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                onSaveSuccess = { navController.popBackStack() }
             )
         }
     }

@@ -43,7 +43,7 @@ object FakeDataUtil {
             ),
             Cours(
                 id = 4,
-                nom = "Francais",
+                nom = "Français",
                 couleurHex = 0xFFFFE4D6
             ),
             Cours(
@@ -75,7 +75,7 @@ object FakeDataUtil {
             RoutineSeed(
                 id = 1,
                 nom = "Examen Math",
-                description = "Reviser chapitres 1 a 4",
+                description = "Réviser chapitres 1 à 4",
                 daysFromNow = 1,
                 repetabilite = Repetabilite.AUCUNE,
                 categorie = CategorieRoutine.EXAMEN,
@@ -85,7 +85,7 @@ object FakeDataUtil {
             RoutineSeed(
                 id = 2,
                 nom = "Devoir Anglais",
-                description = "Remettre la redaction",
+                description = "Remettre la rédaction",
                 daysFromNow = 2,
                 repetabilite = Repetabilite.AUCUNE,
                 categorie = CategorieRoutine.DEVOIR,
@@ -94,8 +94,8 @@ object FakeDataUtil {
             ),
             RoutineSeed(
                 id = 3,
-                nom = "Etude Algo",
-                description = "Faire exercices de structures de donnees",
+                nom = "Étude Algo",
+                description = "Faire exercices de structures de données",
                 daysFromNow = 3,
                 repetabilite = Repetabilite.HEBDOMADAIRE,
                 categorie = CategorieRoutine.ETUDE,
@@ -105,7 +105,7 @@ object FakeDataUtil {
             RoutineSeed(
                 id = 5,
                 nom = "Travail Histoire",
-                description = "Preparer le resume sur la Revolution industrielle",
+                description = "Préparer le résumé sur la Révolution industrielle",
                 daysFromNow = 5,
                 repetabilite = Repetabilite.AUCUNE,
                 categorie = CategorieRoutine.PROJET,
@@ -115,7 +115,7 @@ object FakeDataUtil {
             RoutineSeed(
                 id = 6,
                 nom = "Lab Science",
-                description = "Completer le rapport de laboratoire",
+                description = "Compléter le rapport de laboratoire",
                 daysFromNow = 6,
                 repetabilite = Repetabilite.AUCUNE,
                 categorie = CategorieRoutine.DEVOIR,

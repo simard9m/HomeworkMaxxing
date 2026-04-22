@@ -217,24 +217,24 @@ class RoutineFormViewModel @Inject constructor(
         }
         if (currentRoutineId == null && selectedDateTime!!.isBefore(LocalDateTime.now())) {
             _uiState.update {
-                it.copy(errorMessage = "La date et l'heure ne peuvent pas être dans le passé.")
+                it.copy(errorMessage = "La date et l'heure ne peuvent pas �tre dans le pass�.")
             }
             return null
         }
         if (sessionLastDay != null && selectedDateTime!!.toLocalDate().isAfter(sessionLastDay)) {
             _uiState.update {
-                it.copy(errorMessage = "La date ne peut pas dépasser la date de fin de session.")
+                it.copy(errorMessage = "La date ne peut pas d�passer la date de fin de session.")
             }
             return null
         }
         val categorie = state.categorie
         if (categorie == null) {
-            _uiState.update { it.copy(errorMessage = "La categorie est requise.") }
+            _uiState.update { it.copy(errorMessage = "La cat�gorie est requise.") }
             return null
         }
         val priorite = state.priorite
         if (priorite == null) {
-            _uiState.update { it.copy(errorMessage = "La priorite est requise.") }
+            _uiState.update { it.copy(errorMessage = "La priorit� est requise.") }
             return null
         }
 

@@ -10,10 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Routine
+import com.example.homeworkmaxxing.ui.components.HomeworkTopBar
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -116,6 +115,7 @@ fun DashboardScreen(
         } else {
             DashboardContent(
                 uiState = uiState,
+                onRoutinesClick = onRoutinesClick,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
@@ -124,7 +124,7 @@ fun DashboardScreen(
         }
     }
 
-    if (!uiState.isLoading) {
+    if (!uiState.isLoading && uiState.errorMessage == null) {
         when (uiState.sessionState) {
             SessionState.NO_SESSION -> {
                 AlertDialog(
@@ -174,22 +174,9 @@ private fun DashboardTopBar(
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
 
-    Surface(
-        tonalElevation = 1.dp,
-        shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFB388FF)),
-        modifier = Modifier
-            .statusBarsPadding()
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    HomeworkTopBar(
+        title = "HomeWork Maxxing",
+        navigationIcon = {
             Box {
                 IconButton(onClick = { isMenuExpanded = true }) {
                     Icon(Icons.Default.Menu, contentDescription = "Menu")
@@ -215,25 +202,20 @@ private fun DashboardTopBar(
                     )
                 }
             }
-
-            Text(
-                text = "HomeWork Maxxing",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-                fontWeight = FontWeight.SemiBold
-            )
-
+        },
+        actions = {
             IconButton(onClick = onSettingsClick) {
                 Icon(Icons.Outlined.Settings, contentDescription = "Settings")
             }
         }
-    }
+    )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DashboardContent(
     uiState: DashboardUiState,
+    onRoutinesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val coursById = remember(uiState.cours) { uiState.cours.associateBy { it.id } }
@@ -269,7 +251,7 @@ private fun DashboardContent(
             .filterNot { it.estCompletee }
             .filterNot { it.date.isBefore(java.time.LocalDateTime.now()) }
             .sortedBy { it.date }
-            .take(10)
+            .take(5)
 
         if (upcomingRoutines.isEmpty()) {
             item {
@@ -284,6 +266,19 @@ private fun DashboardContent(
                     routine = routine,
                     cours = routine.coursId?.let { coursById[it] }
                 )
+            }
+        }
+
+        item {
+            Button(
+                onClick = onRoutinesClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFEADFFF),
+                    contentColor = Color(0xFF4B3B73)
+                )
+            ) {
+                Text("Voir toutes mes routines")
             }
         }
 
@@ -372,7 +367,7 @@ private fun CoursesCard(cours: List<Cours>) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Accède a l'onglet \"Cours\" dans le menu pour gérer tes cours",
+                    text = "Accède à l'onglet \"Cours\" dans le menu pour gérer tes cours",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

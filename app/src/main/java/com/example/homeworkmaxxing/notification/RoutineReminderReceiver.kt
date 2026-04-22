@@ -57,10 +57,10 @@ class RoutineReminderReceiver : BroadcastReceiver() {
             if (routineDescription.isNotBlank()) {
                 append(routineDescription)
             } else {
-                append("Ta routine commence bientot.")
+                append("Ta routine commence bientôt.")
             }
             if (timeLabel.isNotBlank()) {
-                append(" (Debut: ")
+                append(" (Début : ")
                 append(timeLabel)
                 append(")")
             }
@@ -106,7 +106,7 @@ class RoutineReminderReceiver : BroadcastReceiver() {
     companion object {
         const val CHANNEL_ID = "routine_reminders"
         const val CHANNEL_NAME = "Rappels de routines"
-        const val CHANNEL_DESCRIPTION = "Notifications des routines planifiees"
+        const val CHANNEL_DESCRIPTION = "Notifications des routines planifiées"
 
         const val EXTRA_ROUTINE_ID = "extra_routine_id"
         const val EXTRA_ROUTINE_NOM = "extra_routine_nom"

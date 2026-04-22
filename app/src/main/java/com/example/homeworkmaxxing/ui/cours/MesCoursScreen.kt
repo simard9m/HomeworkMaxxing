@@ -1,9 +1,11 @@
 package com.example.homeworkmaxxing.ui.cours
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,7 +24,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.homeworkmaxxing.data.model.Cours
+import com.example.homeworkmaxxing.ui.components.HomeworkTopBar
 
 @Composable
 fun MesCoursPage(
@@ -53,7 +55,6 @@ fun MesCoursPage(
     onBackClick: (() -> Unit)? = null,
     showSetupDialog: Boolean = false,
     onOpenDrawer: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
     onAddCoursClick: () -> Unit = {},
     onEditCoursClick: (Long) -> Unit = {}
 ) {
@@ -64,7 +65,6 @@ fun MesCoursPage(
         onBackClick = onBackClick,
         showSetupDialog = showSetupDialog,
         onOpenDrawer = onOpenDrawer,
-        onSettingsClick = onSettingsClick,
         onAddCoursClick = onAddCoursClick,
         onEditCoursClick = { cours -> onEditCoursClick(cours.id) },
         onDeleteCoursClick = viewModel::onDeleteClicked,
@@ -79,7 +79,6 @@ fun MesCoursScreen(
     onBackClick: (() -> Unit)?,
     showSetupDialog: Boolean,
     onOpenDrawer: () -> Unit,
-    onSettingsClick: () -> Unit,
     onAddCoursClick: () -> Unit,
     onEditCoursClick: (Cours) -> Unit,
     onDeleteCoursClick: (Cours) -> Unit,
@@ -90,15 +89,39 @@ fun MesCoursScreen(
 
     Scaffold(
         containerColor = Color(0xFFF8F8F8),
+        topBar = {
+            HomeworkTopBar(
+                title = "Mes Cours",
+                navigationIcon = {
+                    if (onBackClick != null) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Retour"
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Ouvrir le menu"
+                            )
+                        }
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddCoursClick,
+                modifier = Modifier.size(66.dp),
                 containerColor = Color(0xFFD9C8F4),
                 contentColor = Color(0xFF6B4FB3)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Ajouter un cours"
+                    contentDescription = "Ajouter un cours",
+                    modifier = Modifier.size(34.dp)
                 )
             }
         }
@@ -109,56 +132,10 @@ fun MesCoursScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (onBackClick != null) {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Retour"
-                        )
-                    }
-                } else {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Ouvrir le menu"
-                        )
-                    }
-                }
-
-                Text(
-                    text = "HomeWork Maxxing",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f)
-                )
-
-                IconButton(onClick = onSettingsClick) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Paramètres"
-                    )
-                }
-            }
-
-            Text(
-                text = "Mes Cours",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 12.dp)
-            )
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        color = Color(0xFFE4D9F3),
-                        shape = RoundedCornerShape(4.dp)
-                    )
+                    .weight(1f)
                     .padding(10.dp)
             ) {
                 when {
@@ -186,7 +163,8 @@ fun MesCoursScreen(
 
                     else -> {
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            contentPadding = PaddingValues(bottom = 104.dp)
                         ) {
                             items(
                                 items = uiState.cours,
@@ -219,7 +197,7 @@ fun MesCoursScreen(
                 text = {
                     Text(
                         "Ajoutez les cours de votre session afin de mieux organiser vos routines, " +
-                            "vous pourrez revenir gérer vos cours en accédant à l'onglet \"Cours\" du menu."
+                            "vous pourrez revenir gerer vos cours en accedant a l'onglet \"Cours\" du menu."
                     )
                 },
                 confirmButton = {
@@ -242,7 +220,8 @@ private fun CoursItem(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F1F8)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border = BorderStroke(1.dp, Color(0xFFD2C7E6)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(
             modifier = Modifier
@@ -301,7 +280,7 @@ private fun DeleteCoursDialog(
             Text("Supprimer")
         },
         text = {
-            Text("Êtes-vous sûr de vouloir supprimer le cours \"${cours.nom}\" ?")
+            Text("Etes-vous sur de vouloir supprimer le cours \"${cours.nom}\" ?")
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {

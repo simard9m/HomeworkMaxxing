@@ -45,7 +45,7 @@ class SettingsViewModel @Inject constructor(
                 )
             )
             _uiState.update {
-                it.copy(message = "La date de fin de session a ete remplacee.")
+                it.copy(message = "La date de fin de session a été remplacée.")
             }
         }
     }
@@ -55,7 +55,7 @@ class SettingsViewModel @Inject constructor(
             routineDao.deleteAllRoutines()
             coursDao.deleteAllCours()
             _uiState.update {
-                it.copy(message = "Tous les cours et toutes les routines ont ete supprimes.")
+                it.copy(message = "Tous les cours et toutes les routines ont été supprimés.")
             }
         }
     }

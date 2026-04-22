@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -30,12 +32,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -66,7 +71,7 @@ import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Priorite
 import com.example.homeworkmaxxing.data.model.Repetabilite
 import com.example.homeworkmaxxing.data.model.Routine
-import com.example.homeworkmaxxing.ui.routine.toColor
+import com.example.homeworkmaxxing.ui.components.HomeworkTopBar
 import com.example.homeworkmaxxing.ui.routine.toLabel
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -80,8 +85,8 @@ import kotlin.math.abs
 fun RoutinesPage(
     viewModel: RoutinesViewModel,
     onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit,
     onAddRoutineClick: () -> Unit,
+    onAddCoursClick: () -> Unit,
     onRoutineClick: (Routine) -> Unit,
     onRoutineEdit: (Routine) -> Unit
 ) {
@@ -91,16 +96,20 @@ fun RoutinesPage(
     Scaffold(
         topBar = {
             RoutinesTopBar(
-                onBackClick = onBackClick,
-                onSettingsClick = onSettingsClick
+                onBackClick = onBackClick
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddRoutineClick,
+                modifier = Modifier.size(66.dp),
                 containerColor = Color(0xFFEADFFF)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Ajouter une routine")
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Ajouter une routine",
+                    modifier = Modifier.size(34.dp)
+                )
             }
         }
     ) { paddingValues ->
@@ -118,6 +127,7 @@ fun RoutinesPage(
                 uiState = uiState,
                 onCategorieSelected = viewModel::setCategorieFilter,
                 onCoursSelected = viewModel::setCoursFilter,
+                onAddCoursClick = onAddCoursClick,
                 onRepetabiliteSelected = viewModel::setRepetabiliteFilter,
                 onShowCompletedChanged = viewModel::setShowCompleted,
                 onToggleCompleted = viewModel::toggleRoutineCompletion,
@@ -157,39 +167,16 @@ fun RoutinesPage(
 
 @Composable
 private fun RoutinesTopBar(
-    onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onBackClick: () -> Unit
 ) {
-    Surface(
-        tonalElevation = 1.dp,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFB388FF)),
-        modifier = Modifier
-            .statusBarsPadding()
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    HomeworkTopBar(
+        title = "Les Routines",
+        navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
             }
-            Text(
-                text = "Les Routines",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = onSettingsClick) {
-                Icon(Icons.Default.Settings, contentDescription = "Parametres")
-            }
         }
-    }
+    )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -198,6 +185,7 @@ private fun RoutinesScreen(
     uiState: RoutinesUiState,
     onCategorieSelected: (CategorieRoutine?) -> Unit,
     onCoursSelected: (Long?) -> Unit,
+    onAddCoursClick: () -> Unit,
     onRepetabiliteSelected: (Repetabilite?) -> Unit,
     onShowCompletedChanged: (Boolean) -> Unit,
     onToggleCompleted: (Routine) -> Unit,
@@ -213,65 +201,103 @@ private fun RoutinesScreen(
                 .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         }
     }
+    var isFiltersExpanded by remember { mutableStateOf(true) }
 
-    LazyColumn(
-        modifier = modifier.background(Color(0xFFF7F2FF)),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+    Column(
+        modifier = modifier
+            .background(Color(0xFFF2EBFC))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        item {
-            Text(
-                text = "Toutes tes routines",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        item {
-            RoutinesFilters(
-                uiState = uiState,
-                onCategorieSelected = onCategorieSelected,
-                onCoursSelected = onCoursSelected,
-                onRepetabiliteSelected = onRepetabiliteSelected,
-                onShowCompletedChanged = onShowCompletedChanged
-            )
-        }
-
-        if (uiState.routines.isEmpty()) {
-            item {
-                EmptyRoutinesMessage()
-            }
-        } else {
-            groupedRoutines.forEach { (weekStart, routines) ->
-                item(key = "week-${weekStart}") {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            color = Color(0xFFF9FAFC)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isFiltersExpanded = !isFiltersExpanded },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = weekLabel(weekStart),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp)
+                        text = "Filtres",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = if (isFiltersExpanded) {
+                            Icons.Default.KeyboardArrowUp
+                        } else {
+                            Icons.Default.KeyboardArrowDown
+                        },
+                        contentDescription = if (isFiltersExpanded) {
+                            "Refermer les filtres"
+                        } else {
+                            "Ouvrir les filtres"
+                        }
                     )
                 }
 
-                items(
-                    items = routines,
-                    key = { routine -> routine.id ?: "${routine.nom}-${routine.date}" }
-                ) { routine ->
-                    SwipeRoutineCard(
-                        routine = routine,
-                        cours = routine.coursId?.let { coursById[it] },
-                        onClick = { onRoutineClick(routine) },
-                        onEdit = { onRoutineEdit(routine) },
-                        onDelete = { onRoutineDeleteRequest(routine) },
-                        onToggleCompleted = { onToggleCompleted(routine) }
+                if (isFiltersExpanded) {
+                    RoutinesFilters(
+                        uiState = uiState,
+                        onCategorieSelected = onCategorieSelected,
+                        onCoursSelected = onCoursSelected,
+                        onAddCoursClick = onAddCoursClick,
+                        onRepetabiliteSelected = onRepetabiliteSelected,
+                        onShowCompletedChanged = onShowCompletedChanged
                     )
                 }
             }
         }
 
-        item {
-            Spacer(modifier = Modifier.height(72.dp))
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentPadding = PaddingValues(bottom = 72.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (uiState.routines.isEmpty()) {
+                item {
+                    EmptyRoutinesMessage()
+                }
+            } else {
+                groupedRoutines.forEach { (weekStart, routines) ->
+                    item(key = "week-${weekStart}") {
+                        Text(
+                            text = weekLabel(weekStart),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    items(
+                        items = routines,
+                        key = { routine -> routine.id ?: "${routine.nom}-${routine.date}" }
+                    ) { routine ->
+                        SwipeRoutineCard(
+                            routine = routine,
+                            cours = routine.coursId?.let { coursById[it] },
+                            onClick = { onRoutineClick(routine) },
+                            onEdit = { onRoutineEdit(routine) },
+                            onDelete = { onRoutineDeleteRequest(routine) },
+                            onToggleCompleted = { onToggleCompleted(routine) }
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -281,6 +307,7 @@ private fun RoutinesFilters(
     uiState: RoutinesUiState,
     onCategorieSelected: (CategorieRoutine?) -> Unit,
     onCoursSelected: (Long?) -> Unit,
+    onAddCoursClick: () -> Unit,
     onRepetabiliteSelected: (Repetabilite?) -> Unit,
     onShowCompletedChanged: (Boolean) -> Unit
 ) {
@@ -288,14 +315,14 @@ private fun RoutinesFilters(
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
                 FilterChip(
-                    selected = uiState.selectedCategorie == null,
+                    selected = uiState.selectedCategories.isEmpty(),
                     onClick = { onCategorieSelected(null) },
                     label = { Text("Toutes") }
                 )
             }
             items(CategorieRoutine.entries) { categorie ->
                 FilterChip(
-                    selected = uiState.selectedCategorie == categorie,
+                    selected = uiState.selectedCategories.contains(categorie),
                     onClick = { onCategorieSelected(categorie) },
                     label = { Text(categorie.toLabel()) }
                 )
@@ -305,15 +332,40 @@ private fun RoutinesFilters(
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
                 FilterChip(
-                    selected = uiState.selectedCoursId == null,
+                    selected = false,
+                    onClick = onAddCoursClick,
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = Color(0xFFEADFFF)
+                    ),
+                    label = {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp),
+                            tint = Color(0xFF6750A4)
+                        )
+                    }
+                )
+            }
+            item {
+                FilterChip(
+                    selected = uiState.selectedCoursIds.isEmpty(),
                     onClick = { onCoursSelected(null) },
                     label = { Text("Tous les cours") }
                 )
             }
             items(uiState.cours, key = { it.id }) { cours ->
+                val selectedCoursColor = cours.couleurHex.toCoursColor()
+                val unselectedCoursColor = selectedCoursColor.copy(alpha = 0.28f)
                 FilterChip(
-                    selected = uiState.selectedCoursId == cours.id,
+                    selected = uiState.selectedCoursIds.contains(cours.id),
                     onClick = { onCoursSelected(cours.id) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = unselectedCoursColor,
+                        selectedContainerColor = selectedCoursColor,
+                        labelColor = unselectedCoursColor.contrastingTextColor(),
+                        selectedLabelColor = selectedCoursColor.contrastingTextColor()
+                    ),
                     label = { Text(cours.nom) }
                 )
             }
@@ -322,14 +374,14 @@ private fun RoutinesFilters(
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
                 FilterChip(
-                    selected = uiState.selectedRepetabilite == null,
+                    selected = uiState.selectedRepetabilites.isEmpty(),
                     onClick = { onRepetabiliteSelected(null) },
                     label = { Text("Toutes les repetitions") }
                 )
             }
             items(Repetabilite.entries) { repetabilite ->
                 FilterChip(
-                    selected = uiState.selectedRepetabilite == repetabilite,
+                    selected = uiState.selectedRepetabilites.contains(repetabilite),
                     onClick = { onRepetabiliteSelected(repetabilite) },
                     label = { Text(repetabilite.toLabel()) }
                 )
@@ -424,7 +476,6 @@ private fun RoutineCard(
     modifier: Modifier = Modifier
 ) {
     val formatter = remember { DateTimeFormatter.ofPattern("EEE d MMM - HH:mm", Locale.FRENCH) }
-    val coursColor = cours?.couleurHex?.toCoursColor() ?: Color(0xFFD7C4F2)
     val titleDecoration = if (routine.estCompletee) {
         TextDecoration.LineThrough
     } else {
@@ -445,21 +496,46 @@ private fun RoutineCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val badgeSize = 45.5.dp
+            val priorityBadgeSize = badgeSize * 0.6f
+            val priorityBadgeOffset = priorityBadgeSize * 0.28f
             Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .border(1.dp, Color(0x33000000), CircleShape)
-                    .background(coursColor.copy(alpha = 0.35f), CircleShape),
+                modifier = Modifier.size(badgeSize),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = routine.categorie.toLabel().firstOrNull()?.uppercase() ?: "R",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                if (cours != null) {
+                    val coursColor = cours.couleurHex.toCoursColor()
+                    Box(
+                        modifier = Modifier
+                            .size(badgeSize)
+                            .border(1.dp, Color(0x33000000), CircleShape)
+                            .background(coursColor, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = cours.nom.trim().firstOrNull()?.uppercase() ?: "?",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = coursColor.contrastingTextColor()
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(badgeSize)
+                            .border(1.dp, Color(0x33000000), CircleShape)
+                            .background(Color(0xFF9E9E9E), CircleShape)
+                    )
+                }
+
+                PriorityBadge(
+                    priorite = routine.priorite,
+                    size = priorityBadgeSize,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = priorityBadgeOffset, y = -priorityBadgeOffset)
                 )
             }
-
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
@@ -481,7 +557,7 @@ private fun RoutineCard(
                 Text(
                     text = "${routine.categorie.toLabel()} - ${routine.repetabilite.toLabel()}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = routine.priorite.priorityColor()
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -505,6 +581,33 @@ private fun RoutineCard(
 }
 
 @Composable
+private fun PriorityBadge(
+    priorite: Priorite,
+    size: androidx.compose.ui.unit.Dp = 18.dp,
+    modifier: Modifier = Modifier
+) {
+    val badgeColor = when (priorite) {
+        Priorite.HAUTE -> Color(0xFFE8B931)
+        Priorite.URGENTE -> Color(0xFFC00F0C)
+        else -> null
+    } ?: return
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .background(badgeColor, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "!",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight(1000),
+            color = Color.White
+        )
+    }
+}
+
+@Composable
 private fun EmptyRoutinesMessage() {
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -518,7 +621,7 @@ private fun EmptyRoutinesMessage() {
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "Modifie les filtres ou cree une nouvelle routine depuis le dashboard.",
+                text = "Modifiez les filtres ou creez une nouvelle routine en appuyant sur le bouton \"+\".",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -533,10 +636,6 @@ private fun weekLabel(weekStart: LocalDate): String {
     return "Semaine du ${weekStart.format(formatter)} au ${weekEnd.format(formatter)}"
 }
 
-private fun Priorite.priorityColor(): Color {
-    return toColor()
-}
-
 private fun Long.toCoursColor(): Color {
     val argb = if (this <= 0xFFFFFF) {
         0xFF000000L or this
@@ -544,4 +643,8 @@ private fun Long.toCoursColor(): Color {
         this
     }
     return Color(argb)
+}
+
+private fun Color.contrastingTextColor(): Color {
+    return if (luminance() > 0.5f) Color(0xFF1A1A1A) else Color.White
 }
