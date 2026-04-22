@@ -266,6 +266,7 @@ private fun DashboardContent(
         }
 
         val upcomingRoutines = uiState.routines
+            .filterNot { it.estCompletee }
             .filterNot { it.date.isBefore(java.time.LocalDateTime.now()) }
             .sortedBy { it.date }
             .take(10)
