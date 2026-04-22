@@ -39,5 +39,6 @@ data class Routine(
     val repetabilite: Repetabilite,
     val categorie: CategorieRoutine,
     val priorite: Priorite,
-    val coursId: Long? = null
+    val coursId: Long? = null,
+    val estCompletee: Boolean = false
 )

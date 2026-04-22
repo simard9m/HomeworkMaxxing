@@ -15,8 +15,12 @@ import com.example.homeworkmaxxing.ui.cours.AjoutModificationCoursPage
 import com.example.homeworkmaxxing.ui.cours.MesCoursPage
 import com.example.homeworkmaxxing.ui.dashboard.DashboardScreen
 import com.example.homeworkmaxxing.ui.dashboard.DashboardViewModel
+import com.example.homeworkmaxxing.ui.routine.RoutineDetailPage
+import com.example.homeworkmaxxing.ui.routine.RoutineDetailViewModel
 import com.example.homeworkmaxxing.ui.routine.RoutineFormScreen
 import com.example.homeworkmaxxing.ui.routine.RoutineFormViewModel
+import com.example.homeworkmaxxing.ui.routines.RoutinesPage
+import com.example.homeworkmaxxing.ui.settings.SettingsPage
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -32,15 +36,46 @@ fun AppNavigation() {
             DashboardScreen(
                 viewModel = dashboardViewModel,
                 onMesCoursClick = { navController.navigate(Screen.MesCours.createRoute()) },
+                onRoutinesClick = { navController.navigate(Screen.Routines.route) },
                 onSessionDateChosen = {
                     navController.navigate(Screen.MesCours.createRoute(showSetupDialog = true))
                 },
+                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+            )
+        }
+
+        composable(Screen.Routines.route) {
+            RoutinesPage(
+                viewModel = hiltViewModel(),
+                onBackClick = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAddRoutineClick = { navController.navigate(Screen.RoutineForm.route) },
                 onRoutineClick = { routine ->
+                    routine.id?.let { routineId ->
+                        navController.navigate(Screen.RoutineDetail.createRoute(routineId))
+                    }
+                },
+                onRoutineEdit = { routine ->
                     routine.id?.let { routineId ->
                         navController.navigate(Screen.EditRoutine.createRoute(routineId))
                     }
                 }
+            )
+        }
+
+        composable(
+            route = Screen.RoutineDetail.route,
+            arguments = listOf(
+                navArgument(Screen.RoutineDetail.routineIdArg) {
+                    type = NavType.IntType
+                }
+            )
+        ) {
+            val routineDetailViewModel: RoutineDetailViewModel = hiltViewModel()
+            RoutineDetailPage(
+                viewModel = routineDetailViewModel,
+                onBackClick = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate(Screen.Settings.route) }
             )
         }
 
@@ -50,7 +85,8 @@ fun AppNavigation() {
                 viewModel = routineFormViewModel,
                 existingRoutine = null,
                 onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onSaved = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate(Screen.Settings.route) }
             )
         }
 
@@ -74,7 +110,15 @@ fun AppNavigation() {
                 existingRoutine = existingRoutine,
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
-                onDelete = { navController.popBackStack() }
+                onDelete = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsPage(
+                viewModel = hiltViewModel(),
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -94,6 +138,7 @@ fun AppNavigation() {
                 viewModel = hiltViewModel(),
                 onBackClick = { navController.popBackStack() },
                 showSetupDialog = showSetupDialog,
+                onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAddCoursClick = {
                     navController.navigate(Screen.CoursForm.createRoute())
                 },
@@ -118,7 +163,8 @@ fun AppNavigation() {
                 viewModel = hiltViewModel(),
                 coursId = coursId,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { navController.popBackStack() }
+                onSaveSuccess = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate(Screen.Settings.route) }
             )
         }
     }

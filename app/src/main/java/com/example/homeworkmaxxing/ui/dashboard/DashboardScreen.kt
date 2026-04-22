@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Settings
@@ -38,10 +37,9 @@ import java.util.Locale
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     onMesCoursClick: () -> Unit = {},
+    onRoutinesClick: () -> Unit = {},
     onSessionDateChosen: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
-    onAddRoutineClick: () -> Unit = {},
-    onRoutineClick: (Routine) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -101,16 +99,9 @@ fun DashboardScreen(
         topBar = {
             DashboardTopBar(
                 onMesCoursClick = onMesCoursClick,
+                onRoutinesClick = onRoutinesClick,
                 onSettingsClick = onSettingsClick
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddRoutineClick,
-                containerColor = Color(0xFFEADFFF)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Ajouter une routine")
-            }
         }
     ) { paddingValues ->
         if (uiState.isLoading) {
@@ -125,7 +116,6 @@ fun DashboardScreen(
         } else {
             DashboardContent(
                 uiState = uiState,
-                onRoutineClick = onRoutineClick,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
@@ -179,6 +169,7 @@ fun DashboardScreen(
 @Composable
 private fun DashboardTopBar(
     onMesCoursClick: () -> Unit,
+    onRoutinesClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
@@ -215,6 +206,13 @@ private fun DashboardTopBar(
                             onMesCoursClick()
                         }
                     )
+                    DropdownMenuItem(
+                        text = { Text("Les Routines") },
+                        onClick = {
+                            isMenuExpanded = false
+                            onRoutinesClick()
+                        }
+                    )
                 }
             }
 
@@ -236,7 +234,6 @@ private fun DashboardTopBar(
 @Composable
 private fun DashboardContent(
     uiState: DashboardUiState,
-    onRoutineClick: (Routine) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val coursById = remember(uiState.cours) { uiState.cours.associateBy { it.id } }
@@ -268,19 +265,23 @@ private fun DashboardContent(
             )
         }
 
-        if (uiState.routines.isEmpty()) {
+        val upcomingRoutines = uiState.routines
+            .filterNot { it.date.isBefore(java.time.LocalDateTime.now()) }
+            .sortedBy { it.date }
+            .take(10)
+
+        if (upcomingRoutines.isEmpty()) {
             item {
                 EmptyRoutinesCard()
             }
         } else {
             items(
-                uiState.routines.sortedBy { it.date },
+                upcomingRoutines,
                 key = { routine -> routine.id ?: "${routine.nom}-${routine.date}" }
             ) { routine ->
                 RoutineRow(
                     routine = routine,
-                    cours = routine.coursId?.let { coursById[it] },
-                    onClick = { onRoutineClick(routine) }
+                    cours = routine.coursId?.let { coursById[it] }
                 )
             }
         }
@@ -304,13 +305,11 @@ private fun DashboardContent(
 @Composable
 private fun RoutineRow(
     routine: Routine,
-    cours: Cours?,
-    onClick: () -> Unit
+    cours: Cours?
 ) {
     val formatter = remember { DateTimeFormatter.ofPattern("EEE d MMM - HH:mm", Locale.FRENCH) }
 
     ElevatedCard(
-        onClick = onClick,
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = Color(0xFFF7F4FB)
@@ -353,12 +352,6 @@ private fun RoutineRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

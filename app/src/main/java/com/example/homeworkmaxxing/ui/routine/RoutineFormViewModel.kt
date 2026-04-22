@@ -46,6 +46,7 @@ class RoutineFormViewModel @Inject constructor(
     val maxSelectableDateMillis: StateFlow<Long?> = _maxSelectableDateMillis.asStateFlow()
 
     private var currentRoutineId: Int? = null
+    private var currentRoutineCompleted = false
     private var selectedDateTime: LocalDateTime? = null
     private var sessionLastDay: LocalDate? = null
     private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy", Locale.FRENCH)
@@ -85,6 +86,7 @@ class RoutineFormViewModel @Inject constructor(
 
     fun loadRoutine(routine: Routine) {
         currentRoutineId = routine.id
+        currentRoutineCompleted = routine.estCompletee
         selectedDateTime = routine.date
         _uiState.update {
             it.copy(
@@ -244,7 +246,8 @@ class RoutineFormViewModel @Inject constructor(
             repetabilite = state.repetabilite,
             categorie = categorie,
             priorite = priorite,
-            coursId = state.coursId
+            coursId = state.coursId,
+            estCompletee = currentRoutineCompleted
         )
     }
 
@@ -255,7 +258,12 @@ class RoutineFormViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             runCatching {
                 if (currentRoutineId == null) {
-                    routineDao.insertRoutine(routine)
+                    val routinesToInsert = buildRoutineOccurrences(routine)
+                    if (routinesToInsert.size == 1) {
+                        routineDao.insertRoutine(routine)
+                    } else {
+                        routineDao.insertRoutines(routinesToInsert)
+                    }
                 } else {
                     routineDao.updateRoutine(routine)
                 }
@@ -276,6 +284,29 @@ class RoutineFormViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun buildRoutineOccurrences(routine: Routine): List<Routine> {
+        val sessionEnd = sessionLastDay ?: return listOf(routine)
+        if (routine.repetabilite == Repetabilite.AUCUNE) return listOf(routine)
+
+        val occurrences = mutableListOf<Routine>()
+        var nextDate = routine.date
+        while (!nextDate.toLocalDate().isAfter(sessionEnd)) {
+            occurrences += routine.copy(
+                id = null,
+                date = nextDate,
+                estCompletee = false
+            )
+            nextDate = when (routine.repetabilite) {
+                Repetabilite.AUCUNE -> break
+                Repetabilite.QUOTIDIEN -> nextDate.plusDays(1)
+                Repetabilite.HEBDOMADAIRE -> nextDate.plusWeeks(1)
+                Repetabilite.MENSUEL -> nextDate.plusMonths(1)
+            }
+        }
+
+        return occurrences.ifEmpty { listOf(routine) }
     }
 
     fun onDelete() {

@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -55,7 +56,8 @@ fun AjoutModificationCoursPage(
     viewModel: CoursFormViewModel,
     coursId: Long = -1L,
     onBackClick: () -> Unit = {},
-    onSaveSuccess: () -> Unit = {}
+    onSaveSuccess: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -77,6 +79,7 @@ fun AjoutModificationCoursPage(
     AjoutModificationCoursScreen(
         uiState = uiState,
         onBackClick = onBackClick,
+        onSettingsClick = onSettingsClick,
         onNomChange = viewModel::onNomChange,
         onColorSelected = viewModel::onColorSelected,
         onSaveClick = viewModel::saveCours
@@ -87,6 +90,7 @@ fun AjoutModificationCoursPage(
 fun AjoutModificationCoursScreen(
     uiState: CoursFormUiState,
     onBackClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     onNomChange: (String) -> Unit,
     onColorSelected: (Long) -> Unit,
     onSaveClick: () -> Unit
@@ -115,8 +119,16 @@ fun AjoutModificationCoursScreen(
                         "Ajouter un cours"
                     },
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
                 )
+
+                IconButton(onClick = onSettingsClick) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Parametres"
+                    )
+                }
             }
         }
     ) { innerPadding ->

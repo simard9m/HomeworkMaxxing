@@ -20,8 +20,9 @@ class RoutineReminderScheduler @Inject constructor(
     private val appZoneId = ZoneId.of(APP_TIME_ZONE)
 
     fun syncReminders(routines: List<Routine>) {
-        val currentIds = routines.mapNotNull { it.id }.toSet()
-        val currentSignatures = routines.mapNotNull { routine ->
+        val activeRoutines = routines.filterNot { it.estCompletee }
+        val currentIds = activeRoutines.mapNotNull { it.id }.toSet()
+        val currentSignatures = activeRoutines.mapNotNull { routine ->
             val routineId = routine.id ?: return@mapNotNull null
             reminderSignature(routineId, toRoutineStartMillis(routine))
         }.toSet()
@@ -45,7 +46,7 @@ class RoutineReminderScheduler @Inject constructor(
             }
         }
 
-        routines.forEach { routine ->
+        activeRoutines.forEach { routine ->
             scheduleReminder(routine, notifiedSignatures)
         }
 

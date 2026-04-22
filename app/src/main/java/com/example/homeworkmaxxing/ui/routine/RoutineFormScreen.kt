@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
@@ -77,7 +78,8 @@ fun RoutineFormScreen(
     existingRoutine: Routine? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
+    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val coursList by viewModel.coursList.collectAsStateWithLifecycle()
@@ -160,6 +162,7 @@ fun RoutineFormScreen(
             RoutineFormTopBar(
                 isEditing = isEditing,
                 onBack = onBack,
+                onSettingsClick = onSettingsClick,
                 onDelete = if (isEditing && onDelete != null) {
                     { showDeleteConfirm = true }
                 } else null
@@ -395,6 +398,7 @@ fun RoutineFormScreen(
 private fun RoutineFormTopBar(
     isEditing: Boolean,
     onBack: () -> Unit,
+    onSettingsClick: () -> Unit,
     onDelete: (() -> Unit)?
 ) {
     Surface(
@@ -421,6 +425,9 @@ private fun RoutineFormTopBar(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
+            IconButton(onClick = onSettingsClick) {
+                Icon(Icons.Default.Settings, contentDescription = "Parametres")
+            }
             if (onDelete != null) {
                 IconButton(onClick = onDelete) {
                     Icon(

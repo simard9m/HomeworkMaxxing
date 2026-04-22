@@ -18,6 +18,9 @@ interface RoutineDao {
     @Query("SELECT * FROM routines WHERE id = :id LIMIT 1")
     suspend fun getRoutineById(id: Int): Routine?
 
+    @Query("SELECT * FROM routines WHERE id = :id LIMIT 1")
+    fun observeRoutineById(id: Int): Flow<Routine?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRoutine(routine: Routine): Long
 

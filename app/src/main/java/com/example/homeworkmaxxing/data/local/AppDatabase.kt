@@ -9,7 +9,7 @@ import com.example.homeworkmaxxing.data.model.Session
 
 @Database(
     entities = [Routine::class, Cours::class, Session::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(RoomConverters::class)
