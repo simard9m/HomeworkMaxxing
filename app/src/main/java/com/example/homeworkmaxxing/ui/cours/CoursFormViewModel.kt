@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.homeworkmaxxing.data.local.CoursDao
 import com.example.homeworkmaxxing.data.model.Cours
+import com.example.homeworkmaxxing.domain.validation.CoursValidator
 import com.example.homeworkmaxxing.util.ValidationRules
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -18,6 +19,7 @@ class CoursFormViewModel @Inject constructor(
     private val coursDao: CoursDao
 ) : ViewModel() {
 
+    private val coursValidator = CoursValidator()
     private val _uiState = MutableStateFlow(CoursFormUiState())
     val uiState: StateFlow<CoursFormUiState> = _uiState.asStateFlow()
 
@@ -66,17 +68,10 @@ class CoursFormViewModel @Inject constructor(
     fun saveCours() {
         val currentState = _uiState.value
         val trimmedName = currentState.nom.trim()
+        val validationError = coursValidator.validateNom(trimmedName)
 
-        if (trimmedName.isBlank()) {
-            _uiState.update {
-                it.copy(nomError = "Le nom du cours est requis.")
-            }
-            return
-        }
-        if (trimmedName.length > ValidationRules.MAX_COURS_NOM_LENGTH) {
-            _uiState.update {
-                it.copy(nomError = "Maximum ${ValidationRules.MAX_COURS_NOM_LENGTH} caractères.")
-            }
+        if (validationError != null) {
+            _uiState.update { it.copy(nomError = validationError) }
             return
         }
 

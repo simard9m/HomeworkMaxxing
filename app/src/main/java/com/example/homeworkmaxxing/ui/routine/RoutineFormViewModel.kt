@@ -12,8 +12,16 @@ import com.example.homeworkmaxxing.data.model.Cours
 import com.example.homeworkmaxxing.data.model.Priorite
 import com.example.homeworkmaxxing.data.model.Repetabilite
 import com.example.homeworkmaxxing.data.model.Routine
+import com.example.homeworkmaxxing.domain.usecase.BuildRoutineOccurrencesUseCase
+import com.example.homeworkmaxxing.domain.validation.RoutineValidator
 import com.example.homeworkmaxxing.util.ValidationRules
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,12 +29,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @HiltViewModel
 @RequiresApi(Build.VERSION_CODES.O)
@@ -35,6 +37,9 @@ class RoutineFormViewModel @Inject constructor(
     private val routineDao: RoutineDao,
     private val sessionDao: SessionDao
 ) : ViewModel() {
+
+    private val routineValidator = RoutineValidator()
+    private val buildRoutineOccurrencesUseCase = BuildRoutineOccurrencesUseCase()
 
     private val _uiState = MutableStateFlow(RoutineFormUiState())
     val uiState: StateFlow<RoutineFormUiState> = _uiState.asStateFlow()
@@ -200,43 +205,18 @@ class RoutineFormViewModel @Inject constructor(
         val state = _uiState.value
         val nom = state.nom.trim()
         val description = state.description.trim()
+        val validationError = routineValidator.validate(
+            nom = nom,
+            description = description,
+            date = selectedDateTime,
+            sessionLastDay = sessionLastDay,
+            isEditMode = currentRoutineId != null,
+            categorie = state.categorie,
+            priorite = state.priorite
+        )
 
-        if (nom.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Le nom est requis.") }
-            return null
-        }
-        if (nom.length > ValidationRules.MAX_ROUTINE_NOM_LENGTH) {
-            _uiState.update { it.copy(errorMessage = "Le nom de la routine est trop long.") }
-            return null
-        }
-        if (description.length > ValidationRules.MAX_ROUTINE_DESCRIPTION_LENGTH) {
-            _uiState.update { it.copy(errorMessage = "La description est trop longue.") }
-            return null
-        }
-        if (selectedDateTime == null) {
-            _uiState.update { it.copy(errorMessage = "La date et l'heure sont requises.") }
-            return null
-        }
-        if (currentRoutineId == null && selectedDateTime!!.isBefore(LocalDateTime.now())) {
-            _uiState.update {
-                it.copy(errorMessage = "La date et l'heure ne peuvent pas être dans le passé.")
-            }
-            return null
-        }
-        if (sessionLastDay != null && selectedDateTime!!.toLocalDate().isAfter(sessionLastDay)) {
-            _uiState.update {
-                it.copy(errorMessage = "La date ne peut pas dépasser la date de fin de session.")
-            }
-            return null
-        }
-        val categorie = state.categorie
-        if (categorie == null) {
-            _uiState.update { it.copy(errorMessage = "La catégorie est requise.") }
-            return null
-        }
-        val priorite = state.priorite
-        if (priorite == null) {
-            _uiState.update { it.copy(errorMessage = "La priorité est requise.") }
+        if (validationError != null) {
+            _uiState.update { it.copy(errorMessage = validationError) }
             return null
         }
 
@@ -246,8 +226,8 @@ class RoutineFormViewModel @Inject constructor(
             description = description,
             date = selectedDateTime!!,
             repetabilite = state.repetabilite,
-            categorie = categorie,
-            priorite = priorite,
+            categorie = state.categorie!!,
+            priorite = state.priorite!!,
             coursId = state.coursId,
             estCompletee = currentRoutineCompleted
         )
@@ -260,7 +240,7 @@ class RoutineFormViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             runCatching {
                 if (currentRoutineId == null) {
-                    val routinesToInsert = buildRoutineOccurrences(routine)
+                    val routinesToInsert = buildRoutineOccurrencesUseCase(routine, sessionLastDay)
                     if (routinesToInsert.size == 1) {
                         routineDao.insertRoutine(routine)
                     } else {
@@ -286,29 +266,6 @@ class RoutineFormViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    private fun buildRoutineOccurrences(routine: Routine): List<Routine> {
-        val sessionEnd = sessionLastDay ?: return listOf(routine)
-        if (routine.repetabilite == Repetabilite.AUCUNE) return listOf(routine)
-
-        val occurrences = mutableListOf<Routine>()
-        var nextDate = routine.date
-        while (!nextDate.toLocalDate().isAfter(sessionEnd)) {
-            occurrences += routine.copy(
-                id = null,
-                date = nextDate,
-                estCompletee = false
-            )
-            nextDate = when (routine.repetabilite) {
-                Repetabilite.AUCUNE -> break
-                Repetabilite.QUOTIDIEN -> nextDate.plusDays(1)
-                Repetabilite.HEBDOMADAIRE -> nextDate.plusWeeks(1)
-                Repetabilite.MENSUEL -> nextDate.plusMonths(1)
-            }
-        }
-
-        return occurrences.ifEmpty { listOf(routine) }
     }
 
     fun onDelete() {
@@ -341,4 +298,3 @@ class RoutineFormViewModel @Inject constructor(
         private val APP_ZONE_ID: ZoneId = ZoneId.of("America/Toronto")
     }
 }
-

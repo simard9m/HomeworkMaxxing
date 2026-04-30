@@ -7,6 +7,7 @@ import com.example.homeworkmaxxing.data.local.RoutineDao
 import com.example.homeworkmaxxing.data.model.CategorieRoutine
 import com.example.homeworkmaxxing.data.model.Repetabilite
 import com.example.homeworkmaxxing.data.model.Routine
+import com.example.homeworkmaxxing.domain.usecase.FilterRoutinesUseCase
 import com.example.homeworkmaxxing.notification.RoutineReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -22,6 +23,7 @@ class RoutinesViewModel @Inject constructor(
     private val coursDao: CoursDao,
     private val routineReminderScheduler: RoutineReminderScheduler
 ) : ViewModel() {
+    private val filterRoutinesUseCase = FilterRoutinesUseCase()
 
     private val selectedCategories = MutableStateFlow<Set<CategorieRoutine>>(emptySet())
     private val selectedCoursIds = MutableStateFlow<Set<Long>>(emptySet())
@@ -94,18 +96,13 @@ class RoutinesViewModel @Inject constructor(
                 val (allRoutines, cours) = data
                 routineReminderScheduler.syncReminders(allRoutines)
 
-                val filteredRoutines = allRoutines
-                    .filter { routine -> showCompleted || !routine.estCompletee }
-                    .filter { routine ->
-                        categories.isEmpty() || categories.contains(routine.categorie)
-                    }
-                    .filter { routine ->
-                        coursIds.isEmpty() || (routine.coursId != null && coursIds.contains(routine.coursId))
-                    }
-                    .filter { routine ->
-                        repetabilites.isEmpty() || repetabilites.contains(routine.repetabilite)
-                    }
-                    .sortedBy { it.date }
+                val filteredRoutines = filterRoutinesUseCase(
+                    allRoutines = allRoutines,
+                    selectedCategories = categories,
+                    selectedCoursIds = coursIds,
+                    selectedRepetabilites = repetabilites,
+                    showCompleted = showCompleted
+                )
 
                 RoutinesUiState(
                     allRoutines = allRoutines,

@@ -1,14 +1,20 @@
 package com.example.homeworkmaxxing.navigation
 
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.homeworkmaxxing.ui.cours.AjoutModificationCoursPage
@@ -26,6 +32,29 @@ import com.example.homeworkmaxxing.ui.settings.SettingsPage
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    var isBackNavigationLocked by remember { mutableStateOf(false) }
+
+    LaunchedEffect(navBackStackEntry) {
+        isBackNavigationLocked = false
+    }
+
+    fun navigateBackSafely() {
+        if (isBackNavigationLocked) return
+        if (navBackStackEntry?.destination?.route == Screen.Dashboard.route) return
+
+        isBackNavigationLocked = true
+        val hasPopped = navController.popBackStack()
+        if (!hasPopped) {
+            navController.navigate(Screen.Dashboard.route) {
+                launchSingleTop = true
+            }
+        }
+    }
+
+    BackHandler(enabled = navBackStackEntry?.destination?.route != Screen.Dashboard.route) {
+        navigateBackSafely()
+    }
 
     NavHost(
         navController = navController,
@@ -47,7 +76,7 @@ fun AppNavigation() {
         composable(Screen.Routines.route) {
             RoutinesPage(
                 viewModel = hiltViewModel(),
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navigateBackSafely() },
                 onAddRoutineClick = { navController.navigate(Screen.RoutineForm.route) },
                 onAddCoursClick = { navController.navigate(Screen.CoursForm.createRoute()) },
                 onRoutineClick = { routine ->
@@ -74,7 +103,7 @@ fun AppNavigation() {
             val routineDetailViewModel: RoutineDetailViewModel = hiltViewModel()
             RoutineDetailPage(
                 viewModel = routineDetailViewModel,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navigateBackSafely() },
                 onEditClick = { routine ->
                     routine.id?.let { routineId ->
                         navController.navigate(Screen.EditRoutine.createRoute(routineId))
@@ -88,8 +117,8 @@ fun AppNavigation() {
             RoutineFormScreen(
                 viewModel = routineFormViewModel,
                 existingRoutine = null,
-                onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onBack = { navigateBackSafely() },
+                onSaved = { navigateBackSafely() }
             )
         }
 
@@ -111,16 +140,16 @@ fun AppNavigation() {
             RoutineFormScreen(
                 viewModel = routineFormViewModel,
                 existingRoutine = existingRoutine,
-                onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
-                onDelete = { navController.popBackStack() }
+                onBack = { navigateBackSafely() },
+                onSaved = { navigateBackSafely() },
+                onDelete = { navigateBackSafely() }
             )
         }
 
         composable(Screen.Settings.route) {
             SettingsPage(
                 viewModel = hiltViewModel(),
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navigateBackSafely() }
             )
         }
 
@@ -138,7 +167,7 @@ fun AppNavigation() {
                 ?: false
             MesCoursPage(
                 viewModel = hiltViewModel(),
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navigateBackSafely() },
                 showSetupDialog = showSetupDialog,
                 onAddCoursClick = {
                     navController.navigate(Screen.CoursForm.createRoute())
@@ -163,8 +192,8 @@ fun AppNavigation() {
             AjoutModificationCoursPage(
                 viewModel = hiltViewModel(),
                 coursId = coursId,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { navController.popBackStack() }
+                onBackClick = { navigateBackSafely() },
+                onSaveSuccess = { navigateBackSafely() }
             )
         }
     }
